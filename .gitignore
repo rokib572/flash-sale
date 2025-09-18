@@ -1,0 +1,12 @@
+node_modules/
+.pnpm-store/
+dist/
+build/
+.turbo/
+.env
+.env.*
+*.log
+.map
+.DS_Store
+.idea/
+.vscode/

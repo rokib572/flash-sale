@@ -1,0 +1,10 @@
+flowchart LR
+  Web[Web (React)] -->|HTTP| API[API (Express)]
+  API -->|EVAL/EVALSHA| Redis[(Redis)]
+  subgraph Redis Keys
+    STOCK[sale:stock]
+    BUYERS[sale:buyers]
+  end
+  Redis --> STOCK
+  Redis --> BUYERS
+

@@ -1,0 +1,29 @@
+{
+  "name": "@flash-sale/domain-sale",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w -p tsconfig.json"
+  },
+  "dependencies": {
+    "@flash-sale/shared": "workspace:*",
+    "drizzle-orm": "0.44.5",
+    "ioredis": "^5.4.1",
+    "pg": "^8.12.0",
+    "postgres": "^3.4.4",
+    "ulidx": "2.4.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@flash-sale/tsconfig": "workspace:*",
+    "@types/pg": "^8.6.6",
+    "typescript": "^5.6.2"
+  }
+}
