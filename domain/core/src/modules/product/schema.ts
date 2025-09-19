@@ -9,9 +9,12 @@ export const products = coreSchema.table(
   {
     id: primaryKey(),
     name: varchar('name', { length: 256 }).notNull(),
-    quantity: integer('quantity').notNull().default(0),
+    quantity: integer('quantity').notNull(),
     disabled: boolean('disabled').notNull().default(false),
-    createdAt: timestamp('created_at')
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .default(sql`now()`)
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
       .default(sql`now()`)
       .notNull(),
   },
@@ -21,6 +24,11 @@ export const products = coreSchema.table(
 const _selectSchema = createSelectSchema(products).strict();
 export type ProductDbo = ReturnType<(typeof _selectSchema)['parse']>;
 
-const _insertSchema = createInsertSchema(products).omit({ id: true }).strict();
+const _insertSchema = createInsertSchema(products)
+  .omit({ id: true })
+  .strict()
+  .refine((product) => product.quantity >= 0, { message: 'quantity must be >= 0' })
+  .refine((product) => product.name.trim().length > 0, { message: 'name required' });
+
 export type ProductPayload = ReturnType<(typeof _insertSchema)['parse']>;
-export const validateUserPayload = (payload: ProductPayload) => _insertSchema.parse(payload);
+export const validateProductPayload = (payload: ProductPayload) => _insertSchema.parse(payload);

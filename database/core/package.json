@@ -1,0 +1,15 @@
+{
+  "name": "@flash-sale/database-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "migrate:generate": "drizzle-kit generate --config=./local/drizzle.config.ts",
+    "migrate:push": "drizzle-kit push --config=./local/drizzle.config.ts",
+    "migrate:studio": "drizzle-kit studio --config=./local/drizzle.config.ts"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.30.0",
+    "@types/node": "^20.16.5"
+  }
+}
