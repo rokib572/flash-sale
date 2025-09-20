@@ -1,11 +1,11 @@
-import { logger } from '@flash-sale/shared';
+import { getDbClient } from '@flash-sale/domain-core';
+import { createRedisClient } from '@flash-sale/redis';
+import { DomainError, logger } from '@flash-sale/shared';
 import cors, { type CorsOptions } from 'cors';
 import express from 'express';
 import http from 'http';
-import { healthRouter } from './routes/health';
-import { getDbClient } from '@flash-sale/domain-core';
 import { createFlashSaleRouter } from './routes/flash-sale';
-import { createRedisClient } from '@flash-sale/redis';
+import { healthRouter } from './routes/health';
 
 const app = express();
 
@@ -13,7 +13,14 @@ const app = express();
 app.disable('x-powered-by');
 // If behind a proxy/load balancer set hops via env, default 1
 const TRUST_PROXY = process.env.TRUST_PROXY ?? '1';
-app.set('trust proxy', TRUST_PROXY === 'true' ? true : TRUST_PROXY === 'false' ? false : Number(TRUST_PROXY) || TRUST_PROXY);
+app.set(
+  'trust proxy',
+  TRUST_PROXY === 'true'
+    ? true
+    : TRUST_PROXY === 'false'
+      ? false
+      : Number(TRUST_PROXY) || TRUST_PROXY,
+);
 
 // CORS with preflight cache
 const corsOrigins = (process.env.CORS_ORIGIN || '')
@@ -44,12 +51,28 @@ app.use((_req, res) => {
   res.status(404).json({ error: 'not_found' });
 });
 
-// Centralized error handler
+// Centralized error handler with DomainError mapping
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  logger.error({ err }, 'Unhandled error');
-  res.status(500).json({ error: 'internal_error' });
-});
+app.use(
+  (err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    if (err instanceof DomainError) {
+      const map: Record<string, number> = {
+        BAD_REQUEST: 400,
+        UNPROCESSABLE_CONTENT: 422,
+        NOT_FOUND: 404,
+        UNAUTHORISED: 401,
+        HTTP_ERROR: 400,
+        INTERNAL_ERROR: 500,
+      };
+      const status = map[err.code] ?? 400;
+      return res
+        .status(status)
+        .json({ error: err.code.toLowerCase(), message: err.clientSafeMessage || err.message });
+    }
+    logger.error({ err }, 'Unhandled error');
+    res.status(500).json({ error: 'internal_error' });
+  },
+);
 
 const port = Number(process.env.PORT) || 4000;
 
@@ -106,10 +129,13 @@ const bootstrap = async () => {
         .finally(() => process.exit());
     });
     // Fallback timeout
-    setTimeout(() => {
-      logger.warn('Forced shutdown');
-      process.exit(1);
-    }, Number(process.env.SHUTDOWN_TIMEOUT_MS) || 10_000).unref();
+    setTimeout(
+      () => {
+        logger.warn('Forced shutdown');
+        process.exit(1);
+      },
+      Number(process.env.SHUTDOWN_TIMEOUT_MS) || 10_000,
+    ).unref();
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);

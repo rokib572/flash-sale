@@ -11,3 +11,7 @@ export type AuthInfo = {
   payload?: JwtPayload;
 };
 
+// Express request that is guaranteed to have auth populated
+export interface AuthenticatedRequest extends Express.Request {
+  auth: AuthInfo;
+}

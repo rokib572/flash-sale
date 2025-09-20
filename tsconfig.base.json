@@ -12,9 +12,11 @@
     "declaration": true,
     "declarationMap": false,
     "sourceMap": false,
-    "outDir": "dist",
-    "rootDir": "src",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@flash-sale/redis": ["packages/redis/src/index.ts"],
+      "@flash-sale/redis/*": ["packages/redis/src/*"]
+    }
   },
   "exclude": ["node_modules", "dist"]
 }
