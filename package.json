@@ -10,7 +10,7 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "seed:users": "tsx scripts/seed-users.ts",
-    "lint:watch": "eslint . --ext .ts,.tsx,.js --watch",
+    "lint:watch": "eslint . --ext .ts,.tsx --watch",
     "format": "prettier --write .",
     "stress": "tsx scripts/stress.ts"
   },

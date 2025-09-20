@@ -1,0 +1,5 @@
+{
+  "root": true,
+  "extends": ["@flash-sale/config-eslint"],
+  "ignorePatterns": ["dist", "build", "node_modules", ".turbo"]
+}

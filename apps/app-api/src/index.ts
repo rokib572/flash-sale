@@ -1,24 +1,105 @@
 import { logger } from '@flash-sale/shared';
-import cors from 'cors';
+import cors, { type CorsOptions } from 'cors';
 import express from 'express';
+import http from 'http';
 import { healthRouter } from './routes/health';
+import { getDbClient } from '@flash-sale/domain-core';
+import { createFlashSaleRouter } from './routes/flash-sale';
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
+// Core server hardening / tuning for throughput
+app.disable('x-powered-by');
+// If behind a proxy/load balancer set hops via env, default 1
+const TRUST_PROXY = process.env.TRUST_PROXY ?? '1';
+app.set('trust proxy', TRUST_PROXY === 'true' ? true : TRUST_PROXY === 'false' ? false : Number(TRUST_PROXY) || TRUST_PROXY);
+
+// CORS with preflight cache
+const corsOrigins = (process.env.CORS_ORIGIN || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const corsOptions: CorsOptions = {
+  origin: corsOrigins.length ? corsOrigins : true,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  maxAge: 86400, // cache preflight for 24h
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// Parsers with explicit limits
+const jsonLimit = process.env.JSON_LIMIT || '100kb';
+app.use(express.json({ limit: jsonLimit }));
+
+// Routes
 app.use('/health', healthRouter);
-
 app.get('/', (_req, res) => {
   res.json({ name: 'flash-sale-api', status: 'ok' });
+});
+
+// 404 handler
+app.use((_req, res) => {
+  res.status(404).json({ error: 'not_found' });
+});
+
+// Centralized error handler
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  logger.error({ err }, 'Unhandled error');
+  res.status(500).json({ error: 'internal_error' });
 });
 
 const port = Number(process.env.PORT) || 4000;
 
 const bootstrap = async () => {
-  app.listen(port, () => {
+  // Initialize DB once for the process
+  const connectionString = process.env.DATABASE_CONNECTION_URL || process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_CONNECTION_URL (or DATABASE_URL) is required');
+  }
+  const { db } = getDbClient(connectionString, {
+    logQueries: process.env.DATABASE_LOG_QUERIES === 'true',
+    ssl: process.env.DATABASE_SSL !== 'false',
+    maxConnections: Number(process.env.DATABASE_MAX_CONNECTIONS) || 20,
+    connectionTimeout: Number(process.env.DATABASE_CONNECT_TIMEOUT) || 30,
+    idleTimeout: Number(process.env.DATABASE_IDLE_TIMEOUT) || 30,
+  });
+
+  // Mount routers that need DB access
+  app.use('/flash-sales', createFlashSaleRouter(db));
+
+  const server = http.createServer(app);
+
+  // Tune timeouts to play nicely with load balancers (e.g., AWS ALB)
+  server.keepAliveTimeout = 65_000; // 65s
+  server.headersTimeout = 66_000; // must be > keepAliveTimeout
+  // 0 disables per-request timeout, rely on LB timeouts
+  server.requestTimeout = 0;
+
+  server.listen(port, () => {
     logger.info({ port }, 'API listening');
   });
+
+  // Graceful shutdown
+  const shutdown = (signal: NodeJS.Signals) => {
+    logger.info({ signal }, 'Shutting down');
+    // Stop accepting new connections
+    server.close((err) => {
+      if (err) {
+        logger.error({ err }, 'Server close error');
+        process.exitCode = 1;
+      }
+      process.exit();
+    });
+    // Fallback timeout
+    setTimeout(() => {
+      logger.warn('Forced shutdown');
+      process.exit(1);
+    }, Number(process.env.SHUTDOWN_TIMEOUT_MS) || 10_000).unref();
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 };
 
 bootstrap().catch((err) => {
