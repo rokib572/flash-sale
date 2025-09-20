@@ -2,6 +2,8 @@ import { getDbClient } from '@flash-sale/domain-core';
 import { createRedisClient } from '@flash-sale/redis';
 import { DomainError, logger } from '@flash-sale/shared';
 import cors, { type CorsOptions } from 'cors';
+import path from 'path';
+import fs from 'fs';
 import express from 'express';
 import http from 'http';
 import { createFlashSaleRouter } from './routes/flash-sale';
@@ -43,14 +45,8 @@ app.use(express.json({ limit: jsonLimit }));
 
 // Routes
 app.use('/health', healthRouter);
-app.get('/', (_req, res) => {
-  res.json({ name: 'flash-sale-api', status: 'ok' });
-});
 
-// 404 handler
-app.use((_req, res) => {
-  res.status(404).json({ error: 'not_found' });
-});
+// (Static UI serving is registered after API routes in bootstrap)
 
 // Centralized error handler with DomainError mapping
 app.use(
@@ -97,6 +93,16 @@ const bootstrap = async () => {
   // Mount routers that need DB access
   app.use('/flash-sales', createFlashSaleRouter(db));
   app.use('/flash-sales', createOrderRouter(db));
+
+  // Serve UI static assets if present (after API routes)
+  const uiDist = path.resolve(process.cwd(), 'apps/app-ui/dist');
+  if (fs.existsSync(uiDist)) {
+    app.use(express.static(uiDist));
+    // SPA fallback for client routes
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(uiDist, 'index.html'));
+    });
+  }
 
   const server = http.createServer(app);
 

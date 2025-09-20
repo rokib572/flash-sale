@@ -7,6 +7,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4000
+      CORS_ORIGIN: http://localhost:3000
       REDIS_URL: redis://redis:6379
       DATABASE_CONNECTION_URL: postgres://postgres:postgres@postgres:5432/postgres
       DATABASE_SSL: 'false'
@@ -17,6 +18,19 @@ services:
     depends_on:
       - postgres
       - redis
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/app-ui/Dockerfile
+      args:
+        VITE_PRODUCT_ID: product-1
+    environment:
+      NODE_ENV: production
+    ports:
+      - '3000:80'
+    depends_on:
+      - api
 
   postgres:
     image: postgres:16-alpine
