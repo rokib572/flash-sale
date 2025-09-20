@@ -1,7 +1,10 @@
 {
   "extends": "../../packages/tsconfig/tsconfig.json",
   "compilerOptions": {
-    "rootDir": "local"
+    "rootDir": "."
   },
-  "include": ["local/**/*.ts"]
+  "include": [
+    "local/**/*.ts",
+    "seed/**/*.ts"
+  ]
 }
