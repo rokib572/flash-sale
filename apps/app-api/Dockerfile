@@ -1,13 +1,19 @@
 FROM node:20-alpine AS base
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml* .npmrc* ./
-COPY ../../pnpm-workspace.yaml ../../package.json ../../turbo.json ../../tsconfig.base.json /tmp/root/
+# Enable pnpm via corepack
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
-RUN corepack enable && corepack prepare pnpm@9.0.0 --activate || true
-RUN pnpm install --filter @flash-sale/api... --frozen-lockfile || true
+# Copy root manifests for efficient install layer caching
+COPY package.json pnpm-lock.yaml .npmrc* pnpm-workspace.yaml turbo.json tsconfig.base.json ./
 
-COPY . .
+# Copy only package manifests first (better cache) then install filtered workspace
+COPY packages ./packages
+COPY domain ./domain
+COPY apps/app-api ./apps/app-api
 
-CMD ["node", "dist/index.js"]
+# Install only what the API needs (including its workspace deps)
+RUN pnpm install --filter @flash-sale/api... --frozen-lockfile
 
+# Default command: run the API from sources using tsx (no JS emission)
+CMD ["pnpm", "--filter", "@flash-sale/api", "start"]

@@ -1,9 +1,13 @@
 import type { DbClient } from '@flash-sale/domain-core';
 import { getFlashSaleByProductId } from '@flash-sale/domain-core';
 import { Router } from 'express';
+import { jwtOptional } from '../middleware/jwt';
 
 export const createFlashSaleRouter = (db: DbClient) => {
   const router = Router();
+
+  // Parse JWT if present, attach identity (non-blocking)
+  router.use(jwtOptional());
 
   // GET /flash-sales/:productId/status
   router.get('/:productId/status', async (req, res, next) => {

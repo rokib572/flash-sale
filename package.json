@@ -12,7 +12,10 @@
     "seed:users": "tsx scripts/seed-users.ts",
     "lint:watch": "eslint . --ext .ts,.tsx --watch",
     "format": "prettier --write .",
-    "stress": "tsx scripts/stress.ts"
+    "stress": "tsx scripts/stress.ts",
+    "start:docker": "docker compose up --build",
+    "down:docker": "docker compose down",
+    "logs:docker": "docker compose logs -f api"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^7.18.0",

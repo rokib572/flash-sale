@@ -39,6 +39,9 @@ importers:
       '@flash-sale/domain-core':
         specifier: workspace:*
         version: link:../../domain/core
+      '@flash-sale/redis':
+        specifier: workspace:*
+        version: link:../../packages/redis
       '@flash-sale/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -188,6 +191,25 @@ importers:
         specifier: ^7.18.0
         version: 7.18.0(eslint@8.57.1)(typescript@5.9.2)
     devDependencies:
+      typescript:
+        specifier: ^5.6.2
+        version: 5.9.2
+
+  packages/redis:
+    dependencies:
+      '@flash-sale/shared':
+        specifier: workspace:*
+        version: link:../shared
+      ioredis:
+        specifier: ^5.4.1
+        version: 5.7.0
+    devDependencies:
+      '@flash-sale/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/node':
+        specifier: ^20.16.5
+        version: 20.19.17
       typescript:
         specifier: ^5.6.2
         version: 5.9.2

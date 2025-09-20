@@ -2,38 +2,50 @@ version: '3.9'
 services:
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/app-api/Dockerfile
     environment:
       NODE_ENV: development
       PORT: 4000
       REDIS_URL: redis://redis:6379
+      DATABASE_CONNECTION_URL: postgres://postgres:postgres@postgres:5432/postgres
+      DATABASE_SSL: 'false'
       RESET_ON_START: 1
       SALE_TOTAL_STOCK: 1000
     ports:
-      - "4000:4000"
+      - '4000:4000'
     depends_on:
+      - postgres
       - redis
-    volumes:
-      - ./apps/api:/app
-      - /app/node_modules
 
-  web:
-    working_dir: /app
-    image: node:20-alpine
-    command: sh -c "corepack enable && corepack prepare pnpm@9.0.0 --activate && pnpm i && pnpm --filter @flash-sale/web dev --host 0.0.0.0"
+  postgres:
+    image: postgres:16-alpine
     environment:
-      VITE_API_URL: http://localhost:4000
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
     ports:
-      - "5173:5173"
+      - '5433:5432'
     volumes:
-      - ./:/app
-      - /app/node_modules
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
 
 networks:
   default:

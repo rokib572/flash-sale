@@ -5,6 +5,7 @@ import http from 'http';
 import { healthRouter } from './routes/health';
 import { getDbClient } from '@flash-sale/domain-core';
 import { createFlashSaleRouter } from './routes/flash-sale';
+import { createRedisClient } from '@flash-sale/redis';
 
 const app = express();
 
@@ -53,6 +54,10 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 const port = Number(process.env.PORT) || 4000;
 
 const bootstrap = async () => {
+  // Initialize Redis and DB once for the process
+  const redis = createRedisClient({ name: 'api' });
+  app.locals.redis = redis;
+
   // Initialize DB once for the process
   const connectionString = process.env.DATABASE_CONNECTION_URL || process.env.DATABASE_URL;
   if (!connectionString) {
@@ -90,7 +95,15 @@ const bootstrap = async () => {
         logger.error({ err }, 'Server close error');
         process.exitCode = 1;
       }
-      process.exit();
+      Promise.resolve()
+        .then(async () => {
+          try {
+            await redis.quit();
+          } catch (e) {
+            logger.warn({ e }, 'Error closing Redis');
+          }
+        })
+        .finally(() => process.exit());
     });
     // Fallback timeout
     setTimeout(() => {
