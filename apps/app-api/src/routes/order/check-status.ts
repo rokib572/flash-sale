@@ -1,0 +1,45 @@
+import type { DbClient } from '@flash-sale/domain-core';
+import { getFlashSaleByProductId, getUserOrder } from '@flash-sale/domain-core';
+import { DomainError } from '@flash-sale/shared';
+import type { RequestHandler } from 'express';
+import type { AuthenticatedRequest } from '../../types';
+import { asyncHandler } from '../utils/async-handler';
+
+// GET handler: /flash-sales/:productId/order
+export const createOrderCheckStatusHandler = (db: DbClient): RequestHandler =>
+  asyncHandler(async (req, res) => {
+    const { productId } = req.params as { productId: string };
+    const { auth } = req as AuthenticatedRequest;
+    const userId = auth.userId!;
+
+    if (!productId) {
+      throw DomainError.makeError({
+        message: 'product_id_required',
+        code: 'BAD_REQUEST',
+        clientSafeMessage: 'product_id_required',
+      });
+    }
+
+    const sale = await getFlashSaleByProductId(db, { productId });
+    if (!sale) {
+      throw DomainError.makeError({
+        message: 'flash_sale_not_found',
+        code: 'NOT_FOUND',
+        clientSafeMessage: 'flash_sale_not_found',
+      });
+    }
+
+    const order = await getUserOrder(db, { userId, flashSaleId: sale.id });
+    return res.json({
+      secured: Boolean(order),
+      order: order
+        ? {
+            id: order.id,
+            userId: order.userId,
+            flashSaleId: order.flashSaleId,
+            quantity: order.quantity,
+            createdAt: order.createdAt,
+          }
+        : undefined,
+    });
+  });

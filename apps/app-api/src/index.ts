@@ -6,6 +6,7 @@ import express from 'express';
 import http from 'http';
 import { createFlashSaleRouter } from './routes/flash-sale';
 import { healthRouter } from './routes/health';
+import { createOrderRouter } from './routes/order';
 
 const app = express();
 
@@ -52,7 +53,6 @@ app.use((_req, res) => {
 });
 
 // Centralized error handler with DomainError mapping
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use(
   (err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     if (err instanceof DomainError) {
@@ -96,6 +96,7 @@ const bootstrap = async () => {
 
   // Mount routers that need DB access
   app.use('/flash-sales', createFlashSaleRouter(db));
+  app.use('/flash-sales', createOrderRouter(db));
 
   const server = http.createServer(app);
 

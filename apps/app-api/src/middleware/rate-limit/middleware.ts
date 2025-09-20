@@ -1,14 +1,14 @@
-import type { Request, Response, NextFunction } from 'express';
-import type { Redis } from 'ioredis';
 import { logger } from '@flash-sale/shared';
-import { extractUserIdFromAuthToken } from './jwt';
+import type { NextFunction, Request, Response } from 'express';
+import type { Redis } from 'ioredis';
+import type { RateLimitOptions } from '../../types';
 import { buildRateLimitKey } from './keys';
 import { calculateSuggestedTtlSeconds, evaluateTokenBucket } from './tokenBucket';
-import type { RateLimitOptions } from '../../types';
 
 export const createRateLimitMiddleware = (options: RateLimitOptions) => {
   const prefix = options.keyPrefix ?? 'rl';
-  const ttl = options.ttlSeconds ?? calculateSuggestedTtlSeconds(options.capacity, options.refillPerSec);
+  const ttl =
+    options.ttlSeconds ?? calculateSuggestedTtlSeconds(options.capacity, options.refillPerSec);
 
   return async (req: Request, res: Response, next: NextFunction) => {
     const redis: Redis | undefined = req.app?.locals?.redis;

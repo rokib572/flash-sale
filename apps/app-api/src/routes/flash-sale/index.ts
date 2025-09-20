@@ -1,29 +1,26 @@
 import type { DbClient } from '@flash-sale/domain-core';
 import { Router } from 'express';
 import { jwtRequired } from '../../middleware/jwt';
-import {
-  createGlobalRateLimitMiddleware,
-  createIpRateLimitMiddleware,
-  createUserRateLimitMiddleware,
-} from '../../middleware/rate-limit';
 import { createFlashSaleCheckStatusHandler } from './check-status';
-import { createFlashSaleOrderHandler } from './order';
+import { redisJsonCache } from '@flash-sale/redis';
 
 export const createFlashSaleRouter = (db: DbClient) => {
   const router = Router();
 
-  // GET /flash-sales/:productId/status
-  router.get('/:productId/status', jwtRequired(), createFlashSaleCheckStatusHandler(db));
-
-  // POST /flash-sales/:productId/order
-  router.post(
-    '/:productId/order',
+  // GET /flash-sales/:productId/status (Redis cached)
+  router.get(
+    '/:productId/status',
     jwtRequired(),
-    createGlobalRateLimitMiddleware(),
-    createIpRateLimitMiddleware(),
-    createUserRateLimitMiddleware(),
-    createFlashSaleOrderHandler(db),
+    redisJsonCache({
+      key: (req) => `fs:status:${(req.params as any).productId}`,
+      ttlSeconds: Number(process.env.STATUS_TTL_SECONDS || 1),
+      negativeTtlSeconds: 5,
+      enableLock: true,
+    }),
+    createFlashSaleCheckStatusHandler(db),
   );
+
+  // Order routes moved to routes/order
 
   return router;
 };

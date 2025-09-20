@@ -5,11 +5,13 @@ import type { RequestHandler } from 'express';
 import type { AuthenticatedRequest } from '../../types';
 import { asyncHandler } from '../utils/async-handler';
 
-export const createFlashSaleOrderHandler = (db: DbClient): RequestHandler =>
+// POST handler: /flash-sales/:productId/order
+export const createOrderCreateHandler = (db: DbClient): RequestHandler =>
   asyncHandler(async (req, res) => {
     const { productId } = req.params as { productId: string };
     const { auth } = req as AuthenticatedRequest;
     const userId = auth.userId!;
+
     if (!productId) {
       throw DomainError.makeError({
         message: 'product_id_required',
@@ -36,7 +38,5 @@ export const createFlashSaleOrderHandler = (db: DbClient): RequestHandler =>
     });
 
     res.setHeader('Cache-Control', 'no-store');
-    res.status(201).json({
-      order,
-    });
+    res.status(201).json({ order });
   });
