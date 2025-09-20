@@ -1,10 +1,10 @@
+import { useMutation } from '@tanstack/react-query';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { api } from '../../api/client';
 import { loginSuccess } from '../../store';
-import { makeDummyJwt } from '../../auth/token';
 import { LoginView } from './LoginView';
 
 type LoginForm = { email: string; password: string };
@@ -13,6 +13,7 @@ export const LoginPage: React.FC = () => {
   const { watch, setValue, handleSubmit } = useForm<LoginForm>({
     defaultValues: { email: '', password: '' },
   });
+
   const email = watch('email');
   const password = watch('password');
   const dispatch = useDispatch();
@@ -20,15 +21,13 @@ export const LoginPage: React.FC = () => {
 
   const mutation = useMutation({
     mutationFn: async ({ email, password }: LoginForm) => {
-      await new Promise((r) => setTimeout(r, 400));
-      if (!email || !password) throw new Error('Email and password required');
-      // fabricate a userId from email
-      const userId = email.toLowerCase();
-      const token = makeDummyJwt({ sub: userId });
-      return { email, token };
+      return api.post<{
+        token: string;
+        user: { id: string; email: string; givenName: string; familyName: string };
+      }>('/users/authenticate', { email, password });
     },
-    onSuccess: ({ email, token }) => {
-      dispatch(loginSuccess({ email, token }));
+    onSuccess: ({ token, user }) => {
+      dispatch(loginSuccess({ token, user }));
       navigate('/');
     },
   });
