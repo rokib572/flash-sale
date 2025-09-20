@@ -1,9 +1,8 @@
 import { DomainError } from '@flash-sale/shared';
-import { scrypt as _scrypt, randomBytes } from 'node:crypto';
-import { promisify } from 'node:util';
 import postgres from 'postgres';
 import type { DbClient } from '../../../db/client';
 import { users, validateUserPayload, type UserDbo, type UserPayload } from '../schema';
+import { hashPasswordScrypt } from './user-password-hash';
 
 export const createUser = async (
   db: DbClient,
@@ -32,16 +31,4 @@ export const createUser = async (
 
     throw error;
   }
-};
-
-const scrypt = promisify(_scrypt) as (
-  password: string | Buffer,
-  salt: string | Buffer,
-  keylen: number,
-) => Promise<Buffer>;
-
-export const hashPasswordScrypt = async (password: string) => {
-  const salt = randomBytes(16);
-  const derived = await scrypt(password, salt, 32);
-  return `scrypt:${salt.toString('hex')}:${derived.toString('hex')}`;
 };

@@ -9,6 +9,7 @@ import http from 'http';
 import { createFlashSaleRouter } from './routes/flash-sale';
 import { healthRouter } from './routes/health';
 import { createOrderRouter } from './routes/order';
+import { createUserRouter } from './routes/user';
 
 const app = express();
 
@@ -93,6 +94,7 @@ const bootstrap = async () => {
   // Mount routers that need DB access
   app.use('/flash-sales', createFlashSaleRouter(db));
   app.use('/flash-sales', createOrderRouter(db));
+  app.use('/users', createUserRouter(db));
 
   // Serve UI static assets if present (after API routes)
   const uiDist = path.resolve(process.cwd(), 'apps/app-ui/dist');
