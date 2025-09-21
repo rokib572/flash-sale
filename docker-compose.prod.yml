@@ -1,0 +1,73 @@
+version: '3.9'
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/app-api/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # CORS not required when served behind the web proxy; set if needed
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      REDIS_URL: redis://redis:6379
+      # Provide secrets via env at deploy-time; not committed
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-flash-sale}
+      DATABASE_CONNECTION_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_SSL: 'false'
+      # Toggle on only when you want to seed on deploy
+      SEED_ON_START: ${SEED_ON_START:-false}
+    ports:
+      - '4000:4000'
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/app-ui/Dockerfile
+      args:
+        VITE_API_URL: /api
+    environment:
+      NODE_ENV: production
+    ports:
+      - '3000:80'
+    restart: always
+    depends_on:
+      api:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-flash-sale}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+
+networks:
+  default:
+    name: flash-sale
+

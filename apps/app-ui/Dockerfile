@@ -17,11 +17,9 @@ RUN pnpm install --filter @flash-sale/web... --frozen-lockfile
 # Now copy the rest of the UI sources
 COPY apps/app-ui ./apps/app-ui
 
-# Build-time config for Vite
+# Build-time config for Vite (no secrets baked)
 ARG VITE_API_URL
-ARG VITE_PRODUCT_ID
 ENV VITE_API_URL=${VITE_API_URL}
-ENV VITE_PRODUCT_ID=${VITE_PRODUCT_ID}
 
 # Build the web app
 RUN pnpm -F @flash-sale/web build
