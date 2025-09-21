@@ -7,11 +7,15 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 # Copy root manifests for efficient install layer caching
 COPY package.json pnpm-lock.yaml .npmrc* pnpm-workspace.yaml turbo.json tsconfig.base.json ./
 
-# Copy only the UI app sources
-COPY apps/app-ui ./apps/app-ui
+# Copy only the UI package manifest first to maximize install cache
+RUN mkdir -p apps/app-ui
+COPY apps/app-ui/package.json ./apps/app-ui/package.json
 
-# Install only what the web app needs
+# Install only what the web app needs (cached unless manifests change)
 RUN pnpm install --filter @flash-sale/web... --frozen-lockfile
+
+# Now copy the rest of the UI sources
+COPY apps/app-ui ./apps/app-ui
 
 # Build-time config for Vite
 ARG VITE_API_URL
@@ -34,4 +38,3 @@ COPY --from=build /app/apps/app-ui/dist /usr/share/nginx/html
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
-
