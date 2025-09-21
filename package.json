@@ -13,7 +13,7 @@
     "lint:watch": "eslint . --ext .ts,.tsx --watch",
     "format": "prettier --write .",
     "stress": "tsx scripts/stress.ts",
-    "start:docker": "docker compose up --build",
+    "start:docker": "docker compose --env-file ./.env.local up --build",
     "down:docker": "docker compose down",
     "logs:docker": "docker compose logs -f api"
   },

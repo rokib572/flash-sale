@@ -12,6 +12,7 @@ services:
       DATABASE_CONNECTION_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-flash-sale}
       DATABASE_SSL: 'false'
       RESET_ON_START: 0
+      SEED_ON_START: ${SEED_ON_START:-false}
       CHOKIDAR_USEPOLLING: 'true'
     ports:
       - '4000:4000'
