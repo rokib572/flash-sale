@@ -46,6 +46,7 @@ services:
       context: .
       dockerfile: apps/app-ui/Dockerfile
       args:
+        VITE_API_URL: /api
         VITE_PRODUCT_ID: product-1
     environment:
       NODE_ENV: production
