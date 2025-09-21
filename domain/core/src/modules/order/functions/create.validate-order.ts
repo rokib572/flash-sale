@@ -28,5 +28,5 @@ export const validateOrder = async (db: DbClient, query: { orderData: OrderPaylo
   }
 
   // Check if user already has an order for the flash sale
-  if (flashSaleId) validateUserOrder(db, { userId, flashSaleId });
+  if (flashSaleId) await validateUserOrder(db, { userId, flashSaleId });
 };

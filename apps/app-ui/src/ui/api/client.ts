@@ -1,6 +1,6 @@
 const baseUrl: string = (import.meta as any).env?.VITE_API_URL || '';
 
-export type ApiError = { status: number; message: string };
+export type ApiError = { status: number; message: string; traceId?: string };
 
 const parse = async (res: Response) => {
   const text = await res.text();
@@ -16,7 +16,11 @@ export const api = {
     const res = await fetch(`${baseUrl}${path}`, opts);
     if (!res.ok) {
       const body = await parse(res);
-      throw { status: res.status, message: body?.message || body?.error || 'Request failed' } as ApiError;
+      throw {
+        status: res.status,
+        message: body?.message || body?.error || 'Request failed',
+        traceId: body?.traceId,
+      } as ApiError;
     }
     return (await parse(res)) as T;
   },
@@ -29,9 +33,12 @@ export const api = {
     });
     if (!res.ok) {
       const data = await parse(res);
-      throw { status: res.status, message: data?.message || data?.error || 'Request failed' } as ApiError;
+      throw {
+        status: res.status,
+        message: data?.message || data?.error || 'Request failed',
+        traceId: (data as any)?.traceId,
+      } as ApiError;
     }
     return (await parse(res)) as T;
   },
 };
-

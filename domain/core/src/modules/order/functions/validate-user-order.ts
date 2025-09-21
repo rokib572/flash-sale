@@ -11,9 +11,9 @@ export const validateUserOrder = async (
 
   if (userOrder) {
     throw DomainError.makeError({
-      message: 'User already has an order.',
+      message: 'user_already_has_order',
       code: 'BAD_REQUEST',
-      clientSafeMessage: 'Users are allowed to only place a single flash sale order.',
+      clientSafeMessage: "You're not allowed to order twice for the same flash sale.",
     });
   }
 };

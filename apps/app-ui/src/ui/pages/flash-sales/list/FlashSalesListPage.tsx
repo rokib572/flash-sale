@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { api } from '../../../api/client';
+import { api, type ApiError } from '../../../api/client';
 import type { RootState } from '../../../store';
 import { FlashSalesListView, type FlashSale } from './FlashSalesListView';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +29,24 @@ export const FlashSalesListPage: React.FC = () => {
         headers: token ? { 'x-auth-token': token } : undefined,
       }),
     onMutate: (productId) => setOrderingProductId(productId),
+    onError: (err) => {
+      const isApiError = (v: unknown): v is ApiError =>
+        !!v && typeof v === 'object' && 'status' in v && typeof (v as any).status === 'number';
+      if (isApiError(err)) {
+        // Friendly messages
+        if (err.message === 'rate_limited' || err.status === 429) {
+          alert(`Too many requests. Please wait a moment and try again.${err.traceId ? `\nRef: ${err.traceId}` : ''}`);
+        } else if (err.status === 401) {
+          navigate('/login');
+        } else if (err.status === 400) {
+          alert(`You're not allowed to order twice for the same flash sale.${err.traceId ? `\nRef: ${err.traceId}` : ''}`);
+        } else {
+          alert(`${err.message || 'Order failed. Please try again.'}${err.traceId ? `\nRef: ${err.traceId}` : ''}`);
+        }
+      } else {
+        alert('Order failed. Please try again.');
+      }
+    },
     onSettled: () => setOrderingProductId(null),
   });
 

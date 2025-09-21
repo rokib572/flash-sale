@@ -11,11 +11,18 @@ import { healthRouter } from './routes/health';
 import { createOrderRouter } from './routes/order';
 import { createProductsRouter } from './routes/products';
 import { createUserRouter } from './routes/user';
+import crypto from 'node:crypto';
 
 const app = express();
 
 // Core server hardening / tuning for throughput
 app.disable('x-powered-by');
+// Attach a per-request trace id
+app.use((_req, res, next) => {
+  const traceId = crypto.randomUUID();
+  (res.locals as any).traceId = traceId;
+  next();
+});
 // If behind a proxy/load balancer set hops via env, default 1
 const TRUST_PROXY = process.env.TRUST_PROXY ?? '1';
 app.set(
@@ -61,7 +68,12 @@ app.use('/health', healthRouter);
 // Centralized error handler with DomainError mapping
 app.use(
   (err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    if (err instanceof DomainError) {
+    // Handle DomainError even across different module instances by duck-typing
+    const isDomainErrorLike = (e: any) =>
+      e && typeof e === 'object' && typeof e.code === 'string' && typeof e.message === 'string';
+
+    if (err instanceof DomainError || isDomainErrorLike(err)) {
+      const e: any = err;
       const map: Record<string, number> = {
         BAD_REQUEST: 400,
         UNPROCESSABLE_CONTENT: 422,
@@ -70,13 +82,20 @@ app.use(
         HTTP_ERROR: 400,
         INTERNAL_ERROR: 500,
       };
-      const status = map[err.code] ?? 400;
+      const code = e.code || 'BAD_REQUEST';
+      const status = map[code] ?? 400;
+      const traceId = (res.locals as any).traceId;
+      // Log minimal details (avoid leaking stack traces)
+      logger.warn({ traceId, status, code, msg: e.clientSafeMessage || e.message }, 'Domain error');
+      // Respond with client-safe message only
       return res
         .status(status)
-        .json({ error: err.code.toLowerCase(), message: err.clientSafeMessage || err.message });
+        .json({ traceId, error: String(code).toLowerCase(), message: e.clientSafeMessage || 'Bad request' });
     }
-    logger.error({ err }, 'Unhandled error');
-    res.status(500).json({ error: 'internal_error' });
+    const traceId = (res.locals as any).traceId;
+    // Log minimal details
+    logger.error({ traceId, msg: (err as any)?.message || 'Unhandled error' }, 'Unhandled error');
+    res.status(500).json({ traceId, error: 'internal_error', message: 'Unexpected error' });
   },
 );
 
