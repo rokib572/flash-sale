@@ -10,10 +10,12 @@ COPY package.json pnpm-lock.yaml .npmrc* pnpm-workspace.yaml turbo.json tsconfig
 # Copy only package manifests first (better cache) then install filtered workspace
 COPY packages ./packages
 COPY domain ./domain
+COPY database ./database
 COPY apps/app-api ./apps/app-api
 
 # Install only what the API needs (including its workspace deps)
-RUN pnpm install --filter @flash-sale/api... --frozen-lockfile
+RUN pnpm install --filter @flash-sale/api... --filter @flash-sale/database-core... --frozen-lockfile
 
 # Default command: run the API from sources using tsx (no JS emission)
-CMD ["pnpm", "--filter", "@flash-sale/api", "start"]
+# Seed (idempotent) then start API
+CMD ["sh", "-lc", "pnpm tsx database/core/seed/seed-data.ts && pnpm --filter @flash-sale/api start"]

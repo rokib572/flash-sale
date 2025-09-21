@@ -7,17 +7,39 @@ services:
     environment:
       NODE_ENV: development
       PORT: 4000
-      CORS_ORIGIN: http://localhost:3000
+      CORS_ORIGIN: http://localhost:3000,http://localhost:5173
       REDIS_URL: redis://redis:6379
-      DATABASE_CONNECTION_URL: postgres://postgres:postgres@postgres:5432/postgres
+      DATABASE_CONNECTION_URL: postgres://postgres:postgres@postgres:5432/flash-sale
       DATABASE_SSL: 'false'
-      RESET_ON_START: 1
+      RESET_ON_START: 0
       SALE_TOTAL_STOCK: 1000
+      # Seeder configuration (runs once on API start if tables are empty)
+      SEED_USERS: 100000
+      SEED_BATCH_SIZE: 2000
+      SEED_USER_DOMAIN: seed.local
+      SEED_PRODUCTS: 1
+      SEED_PRODUCT_QUANTITY: 100
+      SALE_START_ISO: '2025-01-01T00:00:00.000Z'
+      SALE_END_ISO: '2025-01-01T01:00:00.000Z'
+      CHOKIDAR_USEPOLLING: 'true'
     ports:
       - '4000:4000'
+    # Hot reload: mount source code into the container and run dev watcher
+    volumes:
+      - ./apps/app-api:/app/apps/app-api
+      - ./domain:/app/domain
+      - ./packages:/app/packages
+      - ./database:/app/database
+      - ./tsconfig.base.json:/app/tsconfig.base.json:ro
+      - ./turbo.json:/app/turbo.json:ro
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
+      - ./.npmrc:/app/.npmrc:ro
+    command: sh -lc "pnpm tsx database/core/seed/seed-data.ts && pnpm --filter @flash-sale/api dev"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   web:
     build:
@@ -32,12 +54,27 @@ services:
     depends_on:
       - api
 
+  web-dev:
+    image: node:20-alpine
+    working_dir: /workspace
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://localhost:4000
+      CHOKIDAR_USEPOLLING: 'true'
+    volumes:
+      - ./:/workspace
+    command: sh -lc "corepack enable && corepack prepare pnpm@9.0.0 --activate && pnpm install --filter @flash-sale/web... --frozen-lockfile=false && pnpm -F @flash-sale/web dev -- --host 0.0.0.0"
+    ports:
+      - '5173:5173'
+    depends_on:
+      - api
+
   postgres:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+      POSTGRES_DB: flash-sale
     ports:
       - '5433:5432'
     volumes:

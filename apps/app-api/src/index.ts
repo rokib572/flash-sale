@@ -2,13 +2,14 @@ import { getDbClient } from '@flash-sale/domain-core';
 import { createRedisClient } from '@flash-sale/redis';
 import { DomainError, logger } from '@flash-sale/shared';
 import cors, { type CorsOptions } from 'cors';
-import path from 'path';
-import fs from 'fs';
 import express from 'express';
+import fs from 'fs';
 import http from 'http';
+import path from 'path';
 import { createFlashSaleRouter } from './routes/flash-sale';
 import { healthRouter } from './routes/health';
 import { createOrderRouter } from './routes/order';
+import { createProductsRouter } from './routes/products';
 import { createUserRouter } from './routes/user';
 
 const app = express();
@@ -42,7 +43,15 @@ app.options('*', cors(corsOptions));
 
 // Parsers with explicit limits
 const jsonLimit = process.env.JSON_LIMIT || '100kb';
-app.use(express.json({ limit: jsonLimit }));
+// Accept JSON bodies and tolerate text/plain bodies containing JSON (some clients send text/plain)
+app.use(
+  express.json({
+    limit: jsonLimit,
+    type: ['application/json', 'text/plain'],
+  }),
+);
+// Also accept URL-encoded bodies for form posts
+app.use(express.urlencoded({ extended: true, limit: jsonLimit }));
 
 // Routes
 app.use('/health', healthRouter);
@@ -93,7 +102,8 @@ const bootstrap = async () => {
 
   // Mount routers that need DB access
   app.use('/flash-sales', createFlashSaleRouter(db));
-  app.use('/flash-sales', createOrderRouter(db));
+  app.use('/orders', createOrderRouter(db));
+  app.use('/products', createProductsRouter(db));
   app.use('/users', createUserRouter(db));
 
   // Serve UI static assets if present (after API routes)

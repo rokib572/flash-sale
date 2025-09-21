@@ -33,7 +33,7 @@ export const validateFlashSale = async (
 
   // Check if there is an existing flash sale for the product
   const flashSale = await getOverlappingProductFlashSales(db, { productId, startDate, endDate });
-  if (flashSale) {
+  if (flashSale && flashSale.length > 0) {
     throw DomainError.makeError({
       message: 'Flash sale exist for the product within the date range.',
       code: 'BAD_REQUEST',

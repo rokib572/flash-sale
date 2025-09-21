@@ -9,4 +9,3 @@ export const createUserRouter = (db: DbClient) => {
 
   return router;
 };
-

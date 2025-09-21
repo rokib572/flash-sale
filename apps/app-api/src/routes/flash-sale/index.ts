@@ -1,15 +1,33 @@
 import type { DbClient } from '@flash-sale/domain-core';
-import { Router } from 'express';
-import { jwtRequired } from '../../middleware/jwt';
-import { createFlashSaleCheckStatusHandler } from './check-status';
 import { redisJsonCache } from '@flash-sale/redis';
+import { Router } from 'express';
+import { jwtOptional, jwtRequired } from '../../middleware/jwt';
+import { createFlashSaleCheckStatusHandler } from './check-status';
+import { createFlashSalesListHandler } from './list';
+import { createFlashSaleCreateHandler } from './create';
 
 export const createFlashSaleRouter = (db: DbClient) => {
   const router = Router();
 
-  // GET /flash-sales/:productId/status (Redis cached)
+  // POST /flash-sales (create)
+  router.post('/', jwtRequired(), createFlashSaleCreateHandler(db));
+
+  // GET /flash-sales (list active)
   router.get(
-    '/:productId/status',
+    '/list',
+    jwtOptional(),
+    redisJsonCache({
+      key: () => `fs:list:active`,
+      ttlSeconds: Number(process.env.STATUS_TTL_SECONDS || 1),
+      negativeTtlSeconds: 2,
+      enableLock: true,
+    }),
+    createFlashSalesListHandler(db),
+  );
+
+  // GET /flash-sales/status/:productId (Redis cached)
+  router.get(
+    '/status/:productId',
     jwtRequired(),
     redisJsonCache({
       key: (req) => `fs:status:${(req.params as any).productId}`,
@@ -19,8 +37,6 @@ export const createFlashSaleRouter = (db: DbClient) => {
     }),
     createFlashSaleCheckStatusHandler(db),
   );
-
-  // Order routes moved to routes/order
 
   return router;
 };

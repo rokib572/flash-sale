@@ -1,5 +1,5 @@
 {
-  "id": "db0e9097-ab6b-47d8-be6e-9e6a138ebdd7",
+  "id": "d29b74da-ed73-41cd-9673-b7dfec8cfea7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -20,21 +20,82 @@
           "primaryKey": false,
           "notNull": true
         },
+        "description": {
+          "name": "description",
+          "type": "varchar(512)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true
+        },
         "start_date": {
           "name": "start_date",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true
         },
+        "end_date": {
+          "name": "end_date",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "flash_sales_product_id_index": {
+          "name": "flash_sales_product_id_index",
+          "columns": [
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "flash_sales_product_id_start_date_end_date_index": {
+          "name": "flash_sales_product_id_start_date_end_date_index",
+          "columns": [
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "start_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "end_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
@@ -66,27 +127,68 @@
           "primaryKey": false,
           "notNull": true
         },
+        "flash_sale_id": {
+          "name": "flash_sale_id",
+          "type": "char(26)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "quantity": {
           "name": "quantity",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 1
+          "notNull": true
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
       "indexes": {
+        "orders_user_id_flash_sale_id_index": {
+          "name": "orders_user_id_flash_sale_id_index",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "flash_sale_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "orders_user_id_index": {
           "name": "orders_user_id_index",
           "columns": [
             {
               "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "orders_flash_sale_id_index": {
+          "name": "orders_flash_sale_id_index",
+          "columns": [
+            {
+              "expression": "flash_sale_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -112,18 +214,24 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "orders_flash_sale_id_flash_sales_id_fk": {
+          "name": "orders_flash_sale_id_flash_sales_id_fk",
+          "tableFrom": "orders",
+          "tableTo": "flash_sales",
+          "schemaTo": "core_data",
+          "columnsFrom": [
+            "flash_sale_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "orders_user_id_unique": {
-          "name": "orders_user_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -148,8 +256,7 @@
           "name": "quantity",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true,
-          "default": 0
+          "notNull": true
         },
         "disabled": {
           "name": "disabled",
@@ -160,7 +267,14 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -192,8 +306,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "username": {
-          "name": "username",
+        "email": {
+          "name": "email",
           "type": "varchar(512)",
           "primaryKey": false,
           "notNull": true
@@ -232,7 +346,7 @@
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
@@ -243,7 +357,7 @@
           "name": "users_unique_email_idx",
           "columns": [
             {
-              "expression": "lower(\"username\")",
+              "expression": "lower(\"email\")",
               "asc": true,
               "isExpression": true,
               "nulls": "last"
