@@ -17,19 +17,33 @@ export type FlashSalesListViewProps = {
   sales: FlashSale[];
   isLoading?: boolean;
   error?: string | null;
+  onOrder?: (productId: string) => void;
+  orderingProductId?: string | null;
 };
 
 export const FlashSalesListView: React.FC<FlashSalesListViewProps> = ({
   sales,
   isLoading,
   error,
+  onOrder,
+  orderingProductId,
 }) => {
+  // Dates are already local; compare directly by exact timestamps
+  // Compare timestamps as local strings to avoid any timezone conversion
+  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+  const nowStringLike = (len: number) => {
+    const d = new Date();
+    const full = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(
+      d.getMinutes(),
+    )}:${pad(d.getSeconds())}`;
+    return full.slice(0, len);
+  };
+
   const getStatus = (s: FlashSale) => {
-    const now = new Date();
-    const start = new Date(s.startDate);
-    const end = new Date(s.endDate);
-    if (now < start) return 'upcoming';
-    if (now > end) return 'ended';
+    const patternLen = s.startDate.length; // e.g., 16 (YYYY-MM-DDTHH:mm) or 19 (..:ss)
+    const nowStr = nowStringLike(patternLen);
+    if (nowStr < s.startDate) return 'upcoming';
+    if (nowStr > s.endDate) return 'ended';
     return 'active';
   };
 
@@ -51,34 +65,44 @@ export const FlashSalesListView: React.FC<FlashSalesListViewProps> = ({
       {!isLoading && !error && sales.length === 0 && <Text>No flash sales found.</Text>}
       {!isLoading && !error && sales.length > 0 && (
         <div className="space-y-3">
-          {sales.map((s) => (
-            <div key={s.id} className="rounded-md border p-3">
-              <Text as="div" weight="bold">
-                {s.name}
-              </Text>
-              <Text
-                as="div"
-                color={
-                  getStatus(s) === 'active'
-                    ? 'green'
-                    : getStatus(s) === 'upcoming'
-                      ? 'orange'
-                      : 'gray'
-                }
-              >
-                Status: {getStatus(s)}
-              </Text>
-              <Text as="div">
-                Window: {new Date(s.startDate).toLocaleString()} →{' '}
-                {new Date(s.endDate).toLocaleString()}
-              </Text>
-              {s.description ? (
-                <Text as="p" mt="2">
-                  {s.description}
+          {sales.map((s) => {
+            const status = getStatus(s);
+            const canOrder = status === 'active' && orderingProductId !== s.productId;
+            return (
+              <div key={s.id} className="rounded-md border p-3">
+                <Text as="div" weight="bold">
+                  {s.name}
                 </Text>
-              ) : null}
-            </div>
-          ))}
+                <Text
+                  as="div"
+                  color={status === 'active' ? 'green' : status === 'upcoming' ? 'orange' : 'gray'}
+                >
+                  Status: {status}
+                </Text>
+                <Text as="div">
+                  Window: {s.startDate} → {s.endDate}
+                </Text>
+                {s.description ? (
+                  <Text as="p" mt="2">
+                    {s.description}
+                  </Text>
+                ) : null}
+                <div className="mt-3">
+                  <Button
+                    disabled={!canOrder}
+                    onClick={() => onOrder?.(s.productId)}
+                    title={
+                      canOrder
+                        ? 'Place order for this sale'
+                        : 'Ordering available only during active sale'
+                    }
+                  >
+                    Order Now
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </Container>

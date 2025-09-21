@@ -14,12 +14,13 @@ local refill = tonumber(ARGV[2])
 local now_ms = tonumber(ARGV[3])
 local ttl = tonumber(ARGV[4])
 
-local tokens = 0
+local exists = redis.call('EXISTS', KEYS[1]) == 1
+local tokens = cap
 local last_ms = now_ms
 
-if redis.call('EXISTS', KEYS[1]) == 1 then
+if exists then
   local data = redis.call('HMGET', KEYS[1], 't', 'l')
-  tokens = tonumber(data[1]) or 0
+  tokens = tonumber(data[1]) or cap
   last_ms = tonumber(data[2]) or now_ms
 end
 
