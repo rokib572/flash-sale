@@ -4,6 +4,7 @@ import { DomainError } from '@flash-sale/shared';
 import type { DbClient } from '../../../db/client';
 import { products, validateProductPayload, type ProductDbo, type ProductPayload } from '../schema';
 import { validateProduct } from './update.validate-product';
+import { parseDatabaseError } from '../../../db/error';
 
 export const updateProduct = async (
   db: DbClient,
@@ -40,11 +41,23 @@ export const updateProduct = async (
 
     const whereClause = eq(products.id, productId);
 
-    const [updatedProduct] = await tx
-      .update(products)
-      .set(validatedData)
-      .where(whereClause)
-      .returning();
-    return updatedProduct!;
+    try {
+      const [updatedProduct] = await tx
+        .update(products)
+        .set(validatedData)
+        .where(whereClause)
+        .returning();
+      return updatedProduct!;
+    } catch (error) {
+      const dbErr = parseDatabaseError(error);
+      if (dbErr?.cause?.code === '23505') {
+        throw DomainError.makeError({
+          message: dbErr.cause.detail || 'unique_violation',
+          code: 'BAD_REQUEST',
+          clientSafeMessage: 'Product name already used.',
+        });
+      }
+      throw error;
+    }
   });
 };

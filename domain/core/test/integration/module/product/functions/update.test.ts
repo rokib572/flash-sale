@@ -95,4 +95,54 @@ describe('domain-core integration: updateProduct', () => {
       await queryClient.end();
     }
   });
+
+  it('rejects invalid name (blank) with validation error', async () => {
+    const { db, queryClient } = getDbClient(connectionString, { ssl: false, logQueries: false });
+    try {
+      const created = await createProduct(db, { productData: { name: 'Prod E', quantity: 1 } });
+      await expect(
+        updateProduct(db, {
+          accountId: 'acc-1',
+          productId: created.id,
+          productData: { name: '   ' },
+        }),
+      ).rejects.toThrow(/name required/i);
+    } finally {
+      await queryClient.end();
+    }
+  });
+
+  it('rejects negative quantity with validation error', async () => {
+    const { db, queryClient } = getDbClient(connectionString, { ssl: false, logQueries: false });
+    try {
+      const created = await createProduct(db, { productData: { name: 'Prod F', quantity: 1 } });
+      await expect(
+        updateProduct(db, {
+          accountId: 'acc-1',
+          productId: created.id,
+          productData: { quantity: -1 as any },
+        }),
+      ).rejects.toThrow(/quantity/i);
+    } finally {
+      await queryClient.end();
+    }
+  });
+
+  it('rejects unique name conflict with BAD_REQUEST', async () => {
+    const { db, queryClient } = getDbClient(connectionString, { ssl: false, logQueries: false });
+    try {
+      const p1 = await createProduct(db, { productData: { name: 'Unique A', quantity: 1 } });
+      const p2 = await createProduct(db, { productData: { name: 'Unique B', quantity: 1 } });
+
+      await expect(
+        updateProduct(db, {
+          accountId: 'acc-1',
+          productId: p2.id,
+          productData: { name: p1.name },
+        }),
+      ).rejects.toSatisfy((err: unknown) => err instanceof DomainError && err.code === 'BAD_REQUEST');
+    } finally {
+      await queryClient.end();
+    }
+  });
 });
