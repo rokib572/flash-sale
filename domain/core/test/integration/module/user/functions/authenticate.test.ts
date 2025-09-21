@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll, describe, it, expect } from 'vitest';
 import { getDbClient } from '../../../../../src/db/client';
 import { createUser } from '../../../../../src/modules/user/functions/create';
 import { authenticateUser } from '../../../../../src/modules/user/functions/authenticate';
@@ -8,15 +8,16 @@ import { applyMigrations } from '../../../utils/migrations';
 
 let connectionString: string;
 
-describe('domain-core integration: authenticateUser', () => {
-  beforeAll(async () => {
-    connectionString = await startTestDb();
-    await applyMigrations(connectionString);
-  }, 120_000);
+beforeAll(async () => {
+  connectionString = await startTestDb();
+  await applyMigrations(connectionString);
+}, 120_000);
 
-  afterAll(async () => {
-    await stopTestDb();
-  }, 120_000);
+afterAll(async () => {
+  await stopTestDb();
+}, 120_000);
+
+describe('domain-core integration: authenticateUser', () => {
 
   it('authenticates with correct credentials', async () => {
     const { db, queryClient } = getDbClient(connectionString, { ssl: false, logQueries: false });
@@ -90,4 +91,3 @@ describe('domain-core integration: authenticateUser', () => {
     }
   });
 });
-

@@ -8,7 +8,7 @@ export const validateProduct = async (
   query: { productId: string },
 ): Promise<ProductDbo> => {
   const { productId } = query;
-  const product = await getProductById(db, { productId });
+  const product = await getProductById(db, { productId }, { includeDisabled: true });
   if (!product) {
     throw DomainError.makeError({
       message: 'Product not found.',

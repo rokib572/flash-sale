@@ -1,5 +1,5 @@
 import { DomainError } from '@flash-sale/shared';
-import postgres from 'postgres';
+import { parseDatabaseError } from '../../../db/error';
 
 import type { DbClient } from '../../../db/client';
 import { products, validateProductPayload, type ProductDbo, type ProductPayload } from '../schema';
@@ -15,9 +15,10 @@ export const createProduct = async (
     return product!;
   } catch (error) {
     // see https://www.postgresql.org/docs/current/errcodes-appendix.html
-    if (error instanceof postgres.PostgresError && error.code === '23505') {
+    const dbErr = parseDatabaseError(error);
+    if (dbErr?.cause?.code === '23505') {
       throw DomainError.makeError({
-        message: (error as Error).message,
+        message: dbErr.cause.detail || 'unique_violation',
         code: 'BAD_REQUEST',
         clientSafeMessage: 'Product name already used.',
       });

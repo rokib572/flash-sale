@@ -1,21 +1,22 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getDbClient } from '../../../../../src/db/client';
-import { createUser } from '../../../../../src/modules/user/functions/create';
 import { authenticateUser } from '../../../../../src/modules/user/functions/authenticate';
+import { createUser } from '../../../../../src/modules/user/functions/create';
 import { startTestDb, stopTestDb } from '../../../container';
 import { applyMigrations } from '../../../utils/migrations';
 
 let connectionString: string;
 
-describe('domain-core integration: user flow', () => {
-  beforeAll(async () => {
-    connectionString = await startTestDb();
-    await applyMigrations(connectionString);
-  }, 120_000);
+beforeAll(async () => {
+  connectionString = await startTestDb();
+  await applyMigrations(connectionString);
+}, 120_000);
 
 afterAll(async () => {
   await stopTestDb();
 }, 120_000);
+
+describe('domain-core integration: user flow', () => {
 
   it('creates and authenticates a user', async () => {
     const { db, queryClient } = getDbClient(connectionString, { ssl: false, logQueries: false });
@@ -39,7 +40,6 @@ afterAll(async () => {
       const authed = await authenticateUser(db, { email, password });
       expect(authed.id).toBe(created.id);
     } finally {
-      // Close idle connections
       await queryClient.end();
     }
   });
