@@ -7,8 +7,7 @@ import { api } from '../../api/client';
 import { toast } from 'react-toastify';
 import { loginSuccess } from '../../store';
 import { LoginView } from './LoginView';
-
-type LoginForm = { email: string; password: string };
+import type { LoginForm } from './types';
 
 export const LoginPage: React.FC = () => {
   const { watch, setValue, handleSubmit } = useForm<LoginForm>({

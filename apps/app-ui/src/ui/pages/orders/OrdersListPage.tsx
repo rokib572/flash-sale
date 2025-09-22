@@ -4,17 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import type { RootState } from '../../store';
 import { api } from '../../api/client';
 import { OrdersListView } from './OrdersListView';
+import type { OrderRow } from './types';
 import { useRedirectOn401 } from '../../../modules/shared/hooks/use-redirect-on-401';
 import { qk } from '../../api/query-keys';
 
-export type OrderRow = {
-  id: string;
-  userId: string;
-  flashSaleId?: string | null;
-  productId: string;
-  quantity: number;
-  createdAt: string;
-};
+export type { OrderRow };
 
 type ListResponse = { orders: OrderRow[]; limit: number; offset: number };
 

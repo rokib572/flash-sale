@@ -3,16 +3,7 @@ import { Container, Heading, Separator, Text } from '@radix-ui/themes';
 import { Button } from '../../../ui/components/ui/button';
 import { Input } from '../../../ui/components/ui/input';
 import { Label } from '../../../ui/components/ui/label';
-
-export type LoginViewProps = {
-  email: string;
-  password: string;
-  loading?: boolean;
-  error?: string | null;
-  onEmailChange: (v: string) => void;
-  onPasswordChange: (v: string) => void;
-  onSubmit: () => void;
-};
+import type { LoginViewProps } from './types';
 
 export const LoginView: React.FC<LoginViewProps> = ({
   email,
@@ -56,4 +47,3 @@ export const LoginView: React.FC<LoginViewProps> = ({
     </Container>
   );
 };
-

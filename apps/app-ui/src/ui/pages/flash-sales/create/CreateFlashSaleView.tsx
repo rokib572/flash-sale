@@ -6,24 +6,7 @@ import { Label } from '../../../components/ui/label';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import { Router } from '../../../../router';
-
-export type Product = { id: string; name: string };
-
-export type CreateFlashSaleViewProps = {
-  products: Product[];
-  values: {
-    name: string;
-    description: string;
-    productId: string;
-    startDate: string; // datetime-local
-    endDate: string;   // datetime-local
-  };
-  loading?: boolean;
-  error?: string | null;
-  onChange: (patch: Partial<CreateFlashSaleViewProps['values']>) => void;
-  onSubmit: () => void;
-  onCancel: () => void;
-};
+import type { CreateFlashSaleViewProps } from './types';
 
 export const CreateFlashSaleView: React.FC<CreateFlashSaleViewProps> = ({
   products,

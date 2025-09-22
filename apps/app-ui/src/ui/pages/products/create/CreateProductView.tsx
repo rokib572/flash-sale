@@ -6,21 +6,7 @@ import { Router } from '../../../../router';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
-
-export type CreateProductValues = {
-  name: string;
-  quantity: number;
-  disabled: boolean;
-};
-
-export type CreateProductViewProps = {
-  values: CreateProductValues;
-  loading?: boolean;
-  error?: string | null;
-  onChange: (patch: Partial<CreateProductValues>) => void;
-  onSubmit: () => void;
-  onCancel: () => void;
-};
+import type { CreateProductViewProps } from './types';
 
 export const CreateProductView: React.FC<CreateProductViewProps> = ({
   values,

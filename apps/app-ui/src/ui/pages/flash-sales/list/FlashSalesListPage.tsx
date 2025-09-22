@@ -4,11 +4,11 @@ import { useSelector } from 'react-redux';
 import { api, type ApiError } from '../../../api/client';
 import { toast } from 'react-toastify';
 import type { RootState } from '../../../store';
-import { FlashSalesListView, type FlashSale } from './FlashSalesListView';
+import { FlashSalesListView } from './FlashSalesListView';
+import type { FlashSale, ListResponse } from './types';
 import { Router } from '../../../../router';
 import { qk } from '../../../api/query-keys';
 
-type ListResponse = { flashSales: FlashSale[] };
 
 export const FlashSalesListPage: React.FC = () => {
   const token = useSelector((s: RootState) => s.auth.token);

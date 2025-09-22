@@ -5,9 +5,8 @@ import type { RootState } from '../../../store';
 import { api } from '../../../api/client';
 import { qk } from '../../../api/query-keys';
 import { useRedirectOn401 } from '../../../../modules/shared/hooks/use-redirect-on-401';
-import { ProductsListView, type Product } from './ProductsListView';
-
-type ProductsResponse = { products: Product[] } | Product[];
+import { ProductsListView } from './ProductsListView';
+import type { Product, ProductsResponse } from './types';
 
 export const ProductsListPage: React.FC = () => {
   const token = useSelector((s: RootState) => s.auth.token);

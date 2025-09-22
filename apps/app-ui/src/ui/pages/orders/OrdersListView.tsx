@@ -4,23 +4,9 @@ import { Button } from '../../components/ui/button';
 import { Container } from '../../layout/Container';
 import { PageHeader } from '../../layout/PageHeader';
 
-import type { OrderRow } from './OrdersListPage';
+import type { OrdersListViewProps } from './types';
 
-type Props = {
-  orders: OrderRow[];
-  loading?: boolean;
-  error?: string | null;
-  page: {
-    limit: number;
-    offset: number;
-    setLimit: (v: number) => void;
-    nextPage: () => void;
-    prevPage: () => void;
-    refetch: () => void | Promise<any>;
-  };
-};
-
-export const OrdersListView: React.FC<Props> = ({ orders, loading, error, page }) => {
+export const OrdersListView: React.FC<OrdersListViewProps> = ({ orders, loading, error, page }) => {
   const fmt = (iso?: string) => (iso ? new Date(iso).toLocaleString() : '-');
   return (
     <>

@@ -5,24 +5,7 @@ import { Router } from '../../../../router';
 import { Button } from '../../../components/ui/button';
 import { Container } from '../../../layout/Container';
 import { PageHeader } from '../../../layout/PageHeader';
-
-export type FlashSale = {
-  id: string;
-  name: string;
-  description: string;
-  productId: string;
-  startDate: string;
-  endDate: string;
-  createdAt: string;
-};
-
-export type FlashSalesListViewProps = {
-  sales: FlashSale[];
-  isLoading?: boolean;
-  error?: string | null;
-  onOrder?: (productId: string) => void;
-  orderingProductId?: string | null;
-};
+import type { FlashSale, FlashSalesListViewProps } from './types';
 
 export const FlashSalesListView: React.FC<FlashSalesListViewProps> = ({
   sales,

@@ -5,7 +5,8 @@ import { Router } from '../../../../router';
 import { toast } from 'react-toastify';
 import { api } from '../../../api/client';
 import type { RootState } from '../../../store';
-import { CreateProductView, type CreateProductValues } from './CreateProductView';
+import { CreateProductView } from './CreateProductView';
+import type { CreateProductValues } from './types';
 import { useRedirectOn401 } from '../../../../modules/shared/hooks/use-redirect-on-401';
 import { qk } from '../../../api/query-keys';
 

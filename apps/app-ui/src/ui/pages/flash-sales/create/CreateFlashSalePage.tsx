@@ -5,19 +5,12 @@ import { Router } from '../../../../router';
 import { toast } from 'react-toastify';
 import { api } from '../../../api/client';
 import type { RootState } from '../../../store';
-import { CreateFlashSaleView, type Product } from './CreateFlashSaleView';
+import { CreateFlashSaleView } from './CreateFlashSaleView';
+import type { Product, CreateRequest, ProductsResponse } from './types';
 import { Button } from '../../../components/ui/button';
 import { useRedirectOn401 } from '../../../../modules/shared/hooks/use-redirect-on-401';
 import { qk } from '../../../api/query-keys';
 
-type ProductsResponse = { products: Product[] } | Product[];
-type CreateRequest = {
-  name: string;
-  description: string;
-  productId: string;
-  startDate: string;
-  endDate: string;
-};
 
 export const CreateFlashSalePage: React.FC = () => {
   const queryClient = useQueryClient();
