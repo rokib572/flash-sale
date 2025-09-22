@@ -32,8 +32,6 @@ The core invariants are enforced server‑side:
 - Client (React) → API (Express) → Postgres (Drizzle) → Redis (cache + optional queue)
 - Optional Worker consumes queued orders, writes to DB, and logs outcomes.
 
-Image placeholder for architecture (replace with your diagram):
-
 ![Architecture](docs/architecture.png)
 
 ## Repository Structure
@@ -59,6 +57,19 @@ Prerequisites:
 Install deps:
 
 - `pnpm install`
+
+- Run in docker (recommended)
+- `pnpm start:docker`
+
+- Integration Test
+- `pnpm integration:test`
+
+- Unit Test
+- `pnpm test`
+
+- Stress Test
+- `pnpm -F @flash-sale/stress-test run:full`
+- `pnpm -F @flash-sale/stress-test run:same-user`
 
 ### Option A: Docker Compose (recommended)
 
