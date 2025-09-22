@@ -1,7 +1,7 @@
 import { getDbClient, hashPasswordScrypt, users } from '@flash-sale/domain-core';
+import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { spawn } from 'node:child_process';
 
 const seedData = async () => {
   const connectionString = process.env.DATABASE_CONNECTION_URL;
@@ -16,7 +16,6 @@ const seedData = async () => {
   const passwordConvention = (i: number) => `User${i}!Pass`; // predefined password pattern
 
   try {
-    // Optional full reset when requested
     const reset = String(process.env.RESET_ON_START || '').toLowerCase();
     if (reset === '1' || reset === 'true' || reset === 'yes') {
       console.warn('[SEED] RESET_ON_START enabled — dropping schemas core_data and migration_data');
@@ -27,7 +26,7 @@ const seedData = async () => {
         await queryClient.unsafe('DROP SCHEMA IF EXISTS migration_data CASCADE;');
       } catch {}
     }
-    // 1) Apply migrations with Drizzle-Kit before seeding
+
     const runMigrations = async () =>
       await new Promise<void>((resolve, reject) => {
         const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -48,9 +47,6 @@ const seedData = async () => {
 
     await runMigrations();
     console.log('Migrations applied.');
-
-    // (schema is now applied via migrations)
-    // Note: Product and flash sale seeding removed — only seeding one user.
 
     // Users: seed only if empty
     const userCheck = await db.select().from(users).limit(1);

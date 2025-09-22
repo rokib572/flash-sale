@@ -1,6 +1,6 @@
+import { createOrderSafe, getDbClient, type DbClient } from '@flash-sale/domain-core';
 import { createWorker } from '@flash-sale/queue';
 import { logger } from '@flash-sale/shared';
-import { createOrderSafe, getDbClient, type DbClient } from '@flash-sale/domain-core';
 
 type CreateOrderJob = {
   jobId: string;
@@ -32,6 +32,7 @@ const main = async () => {
       const startedAtMs = Date.now();
       const jobPayload = job.data;
       const traceId = jobPayload.traceId || job.id;
+
       try {
         const result = await createOrderSafe(db as DbClient, {
           orderData: {
@@ -51,8 +52,15 @@ const main = async () => {
         }
 
         // Treat already-ordered or not-found as terminal success to avoid retries
-        if (result.code === 'ALREADY_ORDERED' || result.code === 'NOT_FOUND' || result.code === 'BAD_REQUEST') {
-          logger.warn({ traceId, jobId: job.id, code: result.code, ms: Date.now() - startedAtMs }, 'order terminal outcome');
+        if (
+          result.code === 'ALREADY_ORDERED' ||
+          result.code === 'NOT_FOUND' ||
+          result.code === 'BAD_REQUEST'
+        ) {
+          logger.warn(
+            { traceId, jobId: job.id, code: result.code, ms: Date.now() - startedAtMs },
+            'order terminal outcome',
+          );
           return { ok: false, code: result.code };
         }
 
@@ -71,7 +79,9 @@ const main = async () => {
 
   const shutdown = (signal: NodeJS.Signals) => {
     logger.info({ signal }, 'orders worker shutting down');
-    Promise.resolve().then(() => worker.close()).finally(() => process.exit(0));
+    Promise.resolve()
+      .then(() => worker.close())
+      .finally(() => process.exit(0));
   };
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);

@@ -23,6 +23,7 @@ export const getDbClient = (
     idle_timeout: idleTimeout,
     ssl,
   });
+
   const db = drizzle(queryClient, { logger: logQueries ?? true });
   return { queryClient, db };
 };

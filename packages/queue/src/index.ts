@@ -1,4 +1,11 @@
-import { Queue, Worker, type JobsOptions, type Processor, type QueueOptions, type WorkerOptions } from 'bullmq';
+import {
+  Queue,
+  Worker,
+  type JobsOptions,
+  type Processor,
+  type QueueOptions,
+  type WorkerOptions,
+} from 'bullmq';
 
 export type CreateQueueOptions = {
   connectionUrl?: string;
@@ -10,14 +17,15 @@ export type CreateQueueOptions = {
 export type EnqueueOptions = JobsOptions & { jobId?: string };
 
 export const createQueue = (name: string, opts: CreateQueueOptions = {}) => {
-  const connection = opts.connection ?? (opts.connectionUrl ? { url: opts.connectionUrl } : undefined);
+  const connection =
+    opts.connection ?? (opts.connectionUrl ? { url: opts.connectionUrl } : undefined);
   const queueOptions: QueueOptions = {
     prefix: opts.prefix,
     defaultJobOptions: opts.defaultJobOptions,
     ...(connection ? { connection } : {}),
   } as QueueOptions;
-  const queue = new Queue(name, queueOptions);
 
+  const queue = new Queue(name, queueOptions);
   const enqueue = async <T>(jobName: string, data: T, options?: EnqueueOptions) => {
     return queue.add(jobName, data as any, options);
   };
@@ -36,7 +44,8 @@ export const createWorker = <T = unknown>(
   processor: Processor<T, unknown>,
   opts: CreateWorkerOptions = {},
 ) => {
-  const connection = opts.connection ?? (opts.connectionUrl ? { url: opts.connectionUrl } : undefined);
+  const connection =
+    opts.connection ?? (opts.connectionUrl ? { url: opts.connectionUrl } : undefined);
   const workerOptions: WorkerOptions = {
     concurrency: opts.concurrency ?? 10,
     ...(connection ? { connection } : {}),

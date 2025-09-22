@@ -1,10 +1,10 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-toastify';
+import { Router } from '../../router';
 import type { RootState } from '../store';
 import { logout } from '../store';
 import { getTokenExpiry } from './jwt';
-import { toast } from 'react-toastify';
-import { Router } from '../../router';
 
 export const SessionManager: React.FC = () => {
   const dispatch = useDispatch();
@@ -23,6 +23,7 @@ export const SessionManager: React.FC = () => {
         toast.warn('Session will expire in 1 minute.');
       }, warnAtMs - nowMs);
     }
+
     if (expMs > nowMs) {
       expireTimer = setTimeout(() => {
         toast.info('Session expired. Please sign in again.');
@@ -34,6 +35,7 @@ export const SessionManager: React.FC = () => {
       dispatch(logout());
       Router.replace('Login');
     }
+
     return () => {
       if (warnTimer) clearTimeout(warnTimer);
       if (expireTimer) clearTimeout(expireTimer);
