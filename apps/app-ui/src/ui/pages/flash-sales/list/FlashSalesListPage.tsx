@@ -42,12 +42,20 @@ export const FlashSalesListPage: React.FC = () => {
         !!v && typeof v === 'object' && 'status' in v && typeof (v as any).status === 'number';
       if (isApiError(err)) {
         // Friendly messages
-        if (err.message === 'rate_limited' || err.status === 429) {
+        if (err.code === 'rate_limited' || err.status === 429) {
           toast.error('Too many requests. Please wait a moment and try again.');
+        } else if (err.code === 'queue_busy' || err.status === 503) {
+          toast.error('Order queue is busy, please retry shortly.');
         } else if (err.status === 401) {
           navigate('Login');
-        } else if (err.status === 400) {
+        } else if (err.status === 400 && err.message?.toLowerCase().includes('twice')) {
           toast.error("You're not allowed to order twice for the same flash sale.");
+        } else if (err.code === 'bad_request' && err.message?.toLowerCase().includes('sold out')) {
+          toast.error('This product is sold out for the flash sale.');
+        } else if (err.code === 'flash_sale_not_started') {
+          toast.error('Flash sale has not started yet.');
+        } else if (err.code === 'flash_sale_ended') {
+          toast.error('Flash sale has ended.');
         } else {
           toast.error(err.message || 'Order failed. Please try again.');
         }

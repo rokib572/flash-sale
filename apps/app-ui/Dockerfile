@@ -15,7 +15,10 @@ COPY apps/app-ui/package.json ./apps/app-ui/package.json
 RUN pnpm install --filter @flash-sale/web... --no-frozen-lockfile
 
 # Now copy the rest of the UI sources
+# Copy UI sources and shared workspace sources used at build time
 COPY apps/app-ui ./apps/app-ui
+COPY packages/shared ./packages/shared
+COPY packages/tsconfig ./packages/tsconfig
 
 # Build-time config for Vite (no secrets baked)
 ARG VITE_API_URL

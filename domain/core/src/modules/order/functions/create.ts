@@ -1,7 +1,8 @@
 import { classifyDomainError, DomainError } from '@flash-sale/shared';
+import { and, eq, gt, sql } from 'drizzle-orm';
 import type { DbClient } from '../../../db/client';
 import { parseDatabaseError } from '../../../db/error';
-import { getProductById, updateProduct } from '../../product';
+import { products } from '../../product/schema';
 import { OrderDbo, orders, validateOrderPayload, type OrderPayload } from '../schema';
 import { validateOrder } from './create.validate-order';
 
@@ -15,15 +16,22 @@ export const createOrder = async (
     return await db.transaction(async (tx) => {
       const validatedOrderData = validateOrderPayload(orderData);
       await validateOrder(tx, { orderData: validatedOrderData });
-      const [order] = await tx.insert(orders).values(validatedOrderData).returning();
 
-      const productData = await getProductById(tx, { productId });
-      if (order && productData)
-        await updateProduct(tx, {
-          productId,
-          productData: { quantity: productData?.quantity - 1 },
+      const updatedProducts = await tx
+        .update(products)
+        .set({ quantity: sql`${products.quantity} - 1` as any })
+        .where(and(eq(products.id, productId), gt(products.quantity, 0)))
+        .returning();
+
+      if (updatedProducts.length === 0) {
+        throw DomainError.makeError({
+          message: 'sold_out',
+          code: 'BAD_REQUEST',
+          clientSafeMessage: 'Product is sold out for this flash sale.',
         });
+      }
 
+      const [order] = await tx.insert(orders).values(validatedOrderData).returning();
       return order!;
     });
   } catch (error) {
@@ -60,10 +68,10 @@ export const createOrderSafe = async (
   } catch (err) {
     if (err instanceof DomainError) {
       const msg = err.clientSafeMessage || 'Bad request';
-      // Specialize duplicate order into ALREADY_ORDERED
       if (msg.toLowerCase().includes('only place a single')) {
         return { ok: false, code: 'ALREADY_ORDERED', message: msg };
       }
+
       const { code } = classifyDomainError(err);
       if (code === 'NOT_FOUND') return { ok: false, code: 'NOT_FOUND', message: msg };
       return { ok: false, code: 'BAD_REQUEST', message: msg };

@@ -58,8 +58,11 @@ export const CreateFlashSalePage: React.FC = () => {
   });
 
   const mutation = useMutation({
-    mutationFn: async (payload: CreateRequest) =>
-      api.post('/flash-sales', payload, { headers: token ? { 'x-auth-token': token } : undefined }),
+    mutationFn: async (payload: CreateRequest) => {
+      const toIso = (s: string) => new Date(s).toISOString();
+      const body = { ...payload, startDate: toIso(payload.startDate), endDate: toIso(payload.endDate) };
+      return api.post('/flash-sales', body, { headers: token ? { 'x-auth-token': token } : undefined });
+    },
     onSuccess: async () => {
       // Ensure flash sales list refreshes after creation
       await queryClient.invalidateQueries({ queryKey: qk.flashSales.list() });

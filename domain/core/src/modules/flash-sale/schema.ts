@@ -11,8 +11,8 @@ export const flashSales = coreSchema.table(
     name: varchar('name', { length: 256 }).notNull(),
     description: varchar('description', { length: 512 }).notNull(),
     productId: varchar('product_id', { length: 256 }).notNull(),
-    startDate: timestamp('start_date').notNull(),
-    endDate: timestamp('end_date').notNull(),
+    startDate: timestamp('start_date', { withTimezone: true }).notNull(),
+    endDate: timestamp('end_date', { withTimezone: true }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .default(sql`now()`)
       .notNull(),

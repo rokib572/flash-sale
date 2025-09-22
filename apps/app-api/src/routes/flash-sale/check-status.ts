@@ -1,4 +1,5 @@
 import type { DbClient } from '@flash-sale/domain-core';
+import { getSaleStatus } from '@flash-sale/shared/date-utils';
 import { getFlashSaleByProductId } from '@flash-sale/domain-core';
 import type { RequestHandler } from 'express';
 import { asyncHandler } from '../utils/async-handler';
@@ -12,7 +13,7 @@ export const createFlashSaleCheckStatusHandler = (db: DbClient): RequestHandler 
     if (!flashSaleData) return res.status(404).json({ status: 'not_found' });
     const { startDate, endDate } = flashSaleData;
     return res.json({
-      status: getStatus({ startDate, endDate }),
+      status: getSaleStatus({ start: startDate, end: endDate }),
       responseDateTime: new Date().toISOString(),
       sale: {
         ...flashSaleData,
@@ -21,11 +22,3 @@ export const createFlashSaleCheckStatusHandler = (db: DbClient): RequestHandler 
       },
     });
   });
-
-const getStatus = ({ startDate, endDate }: { startDate: Date; endDate: Date }) => {
-  const now = new Date();
-  if (now < startDate) return 'upcoming';
-  if (now > endDate) return 'ended';
-
-  return 'active';
-};

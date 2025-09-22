@@ -3,6 +3,15 @@ import { and, eq, gte, lte } from 'drizzle-orm';
 import type { DbClient } from '../../../db/client';
 import { type FlashSaleDbo, flashSales } from '../schema';
 
+export const getFlashSaleById = async (
+  db: DbClient,
+  query: { id: string },
+): Promise<FlashSaleDbo | undefined> => {
+  const { id } = query;
+  const [row] = await db.select().from(flashSales).where(eq(flashSales.id, id)).limit(1);
+  return row;
+};
+
 export const getFlashSaleByProductId = async (
   db: DbClient,
   query: { productId: string },

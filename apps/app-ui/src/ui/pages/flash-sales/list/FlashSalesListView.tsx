@@ -1,3 +1,4 @@
+import { getSaleStatus } from '@flash-sale/shared/date-utils';
 import { Text } from '@radix-ui/themes';
 import React from 'react';
 import { Router } from '../../../../router';
@@ -30,22 +31,7 @@ export const FlashSalesListView: React.FC<FlashSalesListViewProps> = ({
   onOrder,
   orderingProductId,
 }) => {
-  const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
-  const nowStringLike = (len: number) => {
-    const d = new Date();
-    const full = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(
-      d.getMinutes(),
-    )}:${pad(d.getSeconds())}`;
-    return full.slice(0, len);
-  };
-
-  const getStatus = (s: FlashSale) => {
-    const patternLen = s.startDate.length;
-    const nowStr = nowStringLike(patternLen);
-    if (nowStr < s.startDate) return 'upcoming';
-    if (nowStr > s.endDate) return 'ended';
-    return 'active';
-  };
+  const getStatus = (s: FlashSale) => getSaleStatus({ start: s.startDate, end: s.endDate });
 
   const orderedSales = React.useMemo(() => {
     const priority: Record<'active' | 'upcoming' | 'ended', number> = {

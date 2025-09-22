@@ -15,7 +15,9 @@
     "baseUrl": ".",
     "paths": {
       "@flash-sale/redis": ["packages/redis/src/index.ts"],
-      "@flash-sale/redis/*": ["packages/redis/src/*"]
+      "@flash-sale/redis/*": ["packages/redis/src/*"],
+      "@flash-sale/shared": ["packages/shared/src/index.ts"],
+      "@flash-sale/shared/*": ["packages/shared/src/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

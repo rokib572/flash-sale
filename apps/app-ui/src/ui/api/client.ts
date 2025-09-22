@@ -1,6 +1,6 @@
 const baseUrl: string = (import.meta as any).env?.VITE_API_URL || '';
 
-export type ApiError = { status: number; message: string; traceId?: string };
+export type ApiError = { status: number; message: string; traceId?: string; code?: string };
 
 const parse = async (res: Response) => {
   const text = await res.text();
@@ -19,6 +19,7 @@ export const api = {
       throw {
         status: res.status,
         message: body?.message || body?.error || 'Request failed',
+        code: body?.error,
         traceId: body?.traceId,
       } as ApiError;
     }
@@ -36,6 +37,7 @@ export const api = {
       throw {
         status: res.status,
         message: data?.message || data?.error || 'Request failed',
+        code: (data as any)?.error,
         traceId: (data as any)?.traceId,
       } as ApiError;
     }
