@@ -5,7 +5,7 @@ import { makeUnsignedJwt } from './jwt.js';
 import { loadEnv } from './env.js';
 import { dockerUp, waitForHttpOk } from './docker.js';
 import { runMigrations } from './migrate.js';
-import { fetchUsers, loginUsers, countOrders } from './users.js';
+import { fetchUsers, loginUsers, countOrdersForProductSince } from './users.js';
 import { seedData } from './seed.js';
 
 type Mode = 'same-user' | 'distinct';
@@ -19,13 +19,16 @@ const MODE: Mode = cfg.mode || 'same-user';
 
 const buildBaseUrl = () => URL.replace(/\/$/, '');
 let tokens: string[] = [];
-const buildPickToken = () => {
-  if (tokens.length <= 1) return () => tokens[0];
+let userIdsForTokens: string[] = [];
+const buildPickTokenAndUser = () => {
+  if (tokens.length <= 1) return () => ({ token: tokens[0], userId: userIdsForTokens[0] });
   let idx = 0;
   return () => {
-    const t = tokens[idx % tokens.length];
+    const i = idx % tokens.length;
+    const t = tokens[i];
+    const u = userIdsForTokens[i];
     idx++;
-    return t;
+    return { token: t, userId: u };
   };
 };
 
@@ -50,6 +53,7 @@ const run = async () => {
     const users = await fetchUsers(dbUrl, cfg.users);
     console.log(`Building unsigned tokens for ${users.length} users...`);
     tokens = users.map((u) => makeUnsignedJwt({ sub: u.id }));
+    userIdsForTokens = users.map((u) => u.id);
   } else {
     // Not full flow: build tokens based on env config
     if (!PRODUCT_ID) {
@@ -63,6 +67,7 @@ const run = async () => {
         process.exit(1);
       }
       tokens = [makeUnsignedJwt({ sub: uid })];
+      userIdsForTokens = [uid];
     } else {
       const file = cfg.usersFile;
       if (!file) {
@@ -80,10 +85,11 @@ const run = async () => {
         process.exit(1);
       }
       tokens = ids.map((id) => makeUnsignedJwt({ sub: id }));
+      userIdsForTokens = ids;
     }
   }
 
-  const pickToken = buildPickToken();
+  const pickTokenAndUser = buildPickTokenAndUser();
 
   if (!tokens || tokens.length === 0) {
     console.error('No tokens available for stress test. Aborting.');
@@ -93,6 +99,8 @@ const run = async () => {
   const statusCounts: Record<number, number> = {};
   const errorCounts: Record<string, number> = {}; // key: `${status}|${error}`
   const csvRows: Array<{ status: number; error: string }> = [];
+  const attemptsByUser: Record<string, number> = {};
+  const testStartedAtIso = new Date().toISOString();
 
   const instance = autocannon(
   {
@@ -122,7 +130,9 @@ const run = async () => {
         },
         setupRequest: (req: any) => {
           req.headers = req.headers || {};
-          req.headers['x-auth-token'] = pickToken();
+          const picked = pickTokenAndUser();
+          req.headers['x-auth-token'] = picked.token;
+          attemptsByUser[picked.userId] = (attemptsByUser[picked.userId] || 0) + 1;
           return req;
         },
       },
@@ -163,18 +173,30 @@ const run = async () => {
       console.warn('Failed to write CSV summary:', (e as any)?.message || e);
     }
 
-    // Final DB count of inserted orders
+    // Final DB count of inserted orders for this product since test start
     const dbUrlCount =
       cfg.dbUrl ||
       `postgres://${process.env.POSTGRES_USER || 'postgres'}:${process.env.POSTGRES_PASSWORD || 'postgres'}@localhost:${
         process.env.POSTGRES_PORT || '5433'
       }/${process.env.POSTGRES_DB || 'flash-sale'}`;
-    countOrders(dbUrlCount)
-      .then((n) => {
-        console.log(`Inserted ${n} orders in core_data.orders`);
+    countOrdersForProductSince(dbUrlCount, PRODUCT_ID, testStartedAtIso)
+      .then(({ total, perUser }) => {
+        console.log(`Inserted ${total} orders for product ${PRODUCT_ID} since ${testStartedAtIso}`);
+        const duplicates: Array<{ userId: string; duplicates: number }> = [];
+        for (const [uid, attempts] of Object.entries(attemptsByUser)) {
+          const inserted = perUser[uid] ? 1 : 0;
+          const dups = Math.max(0, attempts - inserted);
+          if (dups > 0) duplicates.push({ userId: uid, duplicates: dups });
+        }
+        if (duplicates.length) {
+          console.log('Duplicate Attempts (UserId DuplicateAttemptCount):');
+          for (const d of duplicates) console.log(`${d.userId} ${d.duplicates}`);
+        } else {
+          console.log('No duplicate attempts detected.');
+        }
       })
       .catch((e) => {
-        console.warn('Could not fetch final order count:', e?.message || e);
+        console.warn('Could not fetch product order count:', e?.message || e);
       });
   },
   );

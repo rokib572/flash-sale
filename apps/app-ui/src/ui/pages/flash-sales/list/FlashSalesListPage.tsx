@@ -2,15 +2,16 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useSelector } from 'react-redux';
 import { api, type ApiError } from '../../../api/client';
+import { toast } from 'react-toastify';
 import type { RootState } from '../../../store';
 import { FlashSalesListView, type FlashSale } from './FlashSalesListView';
-import { useNavigate } from 'react-router-dom';
+import { Router } from '../../../../router';
 
 type ListResponse = { flashSales: FlashSale[] };
 
 export const FlashSalesListPage: React.FC = () => {
   const token = useSelector((s: RootState) => s.auth.token);
-  const navigate = useNavigate();
+  const navigate = (name: 'Login') => Router.replace(name);
   const [orderingProductId, setOrderingProductId] = React.useState<string | null>(null);
   const { data, isLoading, error } = useQuery<ListResponse>({
     queryKey: ['flash-sales-list'],
@@ -29,22 +30,29 @@ export const FlashSalesListPage: React.FC = () => {
         headers: token ? { 'x-auth-token': token } : undefined,
       }),
     onMutate: (productId) => setOrderingProductId(productId),
+    onSuccess: (data: any) => {
+      if (data && (data.queued || data.order)) {
+        toast.success(data.queued ? 'Order queued' : 'Order placed');
+      } else {
+        toast.success('Order submitted');
+      }
+    },
     onError: (err) => {
       const isApiError = (v: unknown): v is ApiError =>
         !!v && typeof v === 'object' && 'status' in v && typeof (v as any).status === 'number';
       if (isApiError(err)) {
         // Friendly messages
         if (err.message === 'rate_limited' || err.status === 429) {
-          alert(`Too many requests. Please wait a moment and try again.${err.traceId ? `\nRef: ${err.traceId}` : ''}`);
+          toast.error('Too many requests. Please wait a moment and try again.');
         } else if (err.status === 401) {
-          navigate('/login');
+          navigate('Login');
         } else if (err.status === 400) {
-          alert(`You're not allowed to order twice for the same flash sale.${err.traceId ? `\nRef: ${err.traceId}` : ''}`);
+          toast.error("You're not allowed to order twice for the same flash sale.");
         } else {
-          alert(`${err.message || 'Order failed. Please try again.'}${err.traceId ? `\nRef: ${err.traceId}` : ''}`);
+          toast.error(err.message || 'Order failed. Please try again.');
         }
       } else {
-        alert('Order failed. Please try again.');
+        toast.error('Order failed. Please try again.');
       }
     },
     onSettled: () => setOrderingProductId(null),
@@ -52,7 +60,7 @@ export const FlashSalesListPage: React.FC = () => {
 
   const handleOrder = (productId: string) => {
     if (!token) {
-      navigate('/login');
+      navigate('Login');
       return;
     }
     if (orderingProductId) return; // prevent rapid double submit

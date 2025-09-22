@@ -1,9 +1,11 @@
 import React from 'react';
-import { Container, Heading, Separator, Text } from '@radix-ui/themes';
+import { Text } from '@radix-ui/themes';
+import { Container } from '../../../layout/Container';
+import { PageHeader } from '../../../layout/PageHeader';
 import { Label } from '../../../components/ui/label';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
-import { Link } from 'react-router-dom';
+import { Router } from '../../../../router';
 
 export type Product = { id: string; name: string };
 
@@ -33,14 +35,16 @@ export const CreateFlashSaleView: React.FC<CreateFlashSaleViewProps> = ({
   onCancel,
 }) => {
   return (
-    <Container size="2" style={{ marginTop: '2rem' }}>
-      <div className="flex items-center justify-between">
-        <Heading>Create Flash Sale</Heading>
-        <Button asChild variant="secondary">
-          <Link to="/flash-sales">Back to list</Link>
-        </Button>
-      </div>
-      <Separator my="3" size="4" />
+    <>
+      <PageHeader
+        title="Create Flash Sale"
+        actions={
+          <Button variant="secondary" onClick={() => Router.push('FlashSalesList')}>
+            Back to list
+          </Button>
+        }
+      />
+      <Container className="mt-6">
       {error && (
         <Text color="red" as="p" mb="2">
           {error}
@@ -81,8 +85,8 @@ export const CreateFlashSaleView: React.FC<CreateFlashSaleViewProps> = ({
                 </option>
               ))}
             </select>
-            <Button asChild variant="secondary">
-              <Link to="/products/create">Create Product</Link>
+            <Button variant="secondary" onClick={() => Router.push('ProductsCreate')}>
+              Create Product
             </Button>
           </div>
         </div>
@@ -115,6 +119,7 @@ export const CreateFlashSaleView: React.FC<CreateFlashSaleViewProps> = ({
           </Button>
         </div>
       </form>
-    </Container>
+      </Container>
+    </>
   );
 };

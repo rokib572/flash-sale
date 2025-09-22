@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { Router } from '../../../../router';
+import { toast } from 'react-toastify';
 import { api } from '../../../api/client';
 import type { RootState } from '../../../store';
 import { CreateFlashSaleView, type Product } from './CreateFlashSaleView';
@@ -18,7 +19,7 @@ type CreateRequest = {
 
 export const CreateFlashSalePage: React.FC = () => {
   const token = useSelector((s: RootState) => s.auth.token);
-  const navigate = useNavigate();
+  const navigate = (name: 'Home' | 'ProductsCreate') => Router.replace(name);
 
   const {
     data: productsData,
@@ -56,15 +57,22 @@ export const CreateFlashSalePage: React.FC = () => {
   const mutation = useMutation({
     mutationFn: async (payload: CreateRequest) =>
       api.post('/flash-sales', payload, { headers: token ? { 'x-auth-token': token } : undefined }),
-    onSuccess: () => navigate('/'),
+    onSuccess: () => {
+      toast.success('Flash sale created');
+      navigate('Home');
+    },
+    onError: (e: any) => {
+      const msg = e?.message || 'Failed to create flash sale';
+      toast.error(msg);
+    },
   });
 
   return (
     <>
-      <div className="flex justify-end max-w-xl mx-auto mt-4 px-2">
-        <Button asChild>
-          <Link to="/products/create">Create Product</Link>
-        </Button>
+      <div className="mt-4">
+        <div className="mx-auto w-full max-w-screen-xl px-4 md:px-6 flex justify-end">
+          <Button onClick={() => navigate('ProductsCreate')}>Create Product</Button>
+        </div>
       </div>
       <CreateFlashSaleView
         products={products}
@@ -73,7 +81,7 @@ export const CreateFlashSalePage: React.FC = () => {
         error={(productsError as any)?.message || (mutation.error as any)?.message || null}
         onChange={(patch) => setValues((v) => ({ ...v, ...patch }))}
         onSubmit={() => mutation.mutate(values)}
-        onCancel={() => navigate('/')}
+        onCancel={() => navigate('Home')}
       />
     </>
   );

@@ -1,6 +1,8 @@
-import { Container, Heading, Separator, Text } from '@radix-ui/themes';
+import { Text } from '@radix-ui/themes';
+import { Container } from '../../../layout/Container';
+import { PageHeader } from '../../../layout/PageHeader';
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Router } from '../../../../router';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Label } from '../../../components/ui/label';
@@ -29,14 +31,16 @@ export const CreateProductView: React.FC<CreateProductViewProps> = ({
   onCancel,
 }) => {
   return (
-    <Container size="2" style={{ marginTop: '2rem' }}>
-      <div className="flex items-center justify-between">
-        <Heading>Create Product</Heading>
-        <Button asChild variant="secondary">
-          <Link to="/products">Back to products</Link>
-        </Button>
-      </div>
-      <Separator my="3" size="4" />
+    <>
+      <PageHeader
+        title="Create Product"
+        actions={
+          <Button variant="secondary" onClick={() => Router.push('ProductsList')}>
+            Back to products
+          </Button>
+        }
+      />
+      <Container className="mt-6">
       {error && (
         <Text color="red" as="p" mb="2">
           {error}
@@ -85,6 +89,7 @@ export const CreateProductView: React.FC<CreateProductViewProps> = ({
           </Button>
         </div>
       </form>
-    </Container>
+      </Container>
+    </>
   );
 };

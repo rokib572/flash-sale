@@ -1,14 +1,15 @@
 import { useMutation } from '@tanstack/react-query';
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { Router } from '../../../../router';
+import { toast } from 'react-toastify';
 import { api } from '../../../api/client';
 import type { RootState } from '../../../store';
 import { CreateProductView, type CreateProductValues } from './CreateProductView';
 
 export const CreateProductPage: React.FC = () => {
   const token = useSelector((s: RootState) => s.auth.token);
-  const navigate = useNavigate();
+  const navigate = (name: 'ProductsList') => Router.replace(name);
   const [values, setValues] = React.useState<CreateProductValues>({
     name: '',
     quantity: 0,
@@ -24,7 +25,14 @@ export const CreateProductPage: React.FC = () => {
           headers: token ? { 'x-auth-token': token } : undefined,
         },
       ),
-    onSuccess: () => navigate('/products'),
+    onSuccess: () => {
+      toast.success('Product created');
+      navigate('ProductsList');
+    },
+    onError: (e: any) => {
+      const msg = e?.message || 'Failed to create product';
+      toast.error(msg);
+    },
   });
 
   return (
@@ -34,7 +42,7 @@ export const CreateProductPage: React.FC = () => {
       error={(mutation.error as any)?.message ?? null}
       onChange={(patch) => setValues((v) => ({ ...v, ...patch }))}
       onSubmit={() => mutation.mutate(values)}
-      onCancel={() => navigate('/products')}
+      onCancel={() => navigate('ProductsList')}
     />
   );
 };

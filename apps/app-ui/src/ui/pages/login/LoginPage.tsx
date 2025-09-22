@@ -2,8 +2,9 @@ import { useMutation } from '@tanstack/react-query';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { Router } from '../../../router';
 import { api } from '../../api/client';
+import { toast } from 'react-toastify';
 import { loginSuccess } from '../../store';
 import { LoginView } from './LoginView';
 
@@ -17,7 +18,6 @@ export const LoginPage: React.FC = () => {
   const email = watch('email');
   const password = watch('password');
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   const mutation = useMutation({
     mutationFn: async ({ email, password }: LoginForm) => {
@@ -28,7 +28,12 @@ export const LoginPage: React.FC = () => {
     },
     onSuccess: ({ token, user }) => {
       dispatch(loginSuccess({ token, user }));
-      navigate('/');
+      toast.success(`Welcome, ${user.givenName || user.email}!`);
+      Router.replace('Home');
+    },
+    onError: (e: any) => {
+      const msg = e?.message || 'Login failed';
+      toast.error(msg);
     },
   });
 

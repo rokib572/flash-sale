@@ -1,7 +1,9 @@
 import React from 'react';
-import { Container, Heading, Separator, Text } from '@radix-ui/themes';
+import { Text } from '@radix-ui/themes';
+import { Container } from '../../../layout/Container';
+import { PageHeader } from '../../../layout/PageHeader';
 import { Button } from '../../../components/ui/button';
-import { Link } from 'react-router-dom';
+import { Router } from '../../../../router';
 
 export type Product = { id: string; name: string } & Partial<{ quantity: number; disabled: boolean }>;
 
@@ -13,14 +15,12 @@ export type ProductsListViewProps = {
 
 export const ProductsListView: React.FC<ProductsListViewProps> = ({ products, isLoading, error }) => {
   return (
-    <Container size="2" style={{ marginTop: '2rem' }}>
-      <div className="flex items-center justify-between">
-        <Heading>Products</Heading>
-        <Button asChild>
-          <Link to="/products/create">Create Product</Link>
-        </Button>
-      </div>
-      <Separator my="3" size="4" />
+    <>
+      <PageHeader
+        title="Products"
+        actions={<Button onClick={() => Router.push('ProductsCreate')}>Create Product</Button>}
+      />
+      <Container className="mt-6">
       {isLoading && <Text>Loading…</Text>}
       {error && (
         <Text color="red" as="p">
@@ -29,9 +29,9 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({ products, is
       )}
       {!isLoading && !error && products.length === 0 && <Text>No products.</Text>}
       {!isLoading && !error && products.length > 0 && (
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {products.map((p) => (
-            <div key={p.id} className="rounded-md border p-3">
+            <div key={p.id} className="rounded-lg border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
               <Text as="div" weight="bold">
                 {p.name}
               </Text>
@@ -49,7 +49,7 @@ export const ProductsListView: React.FC<ProductsListViewProps> = ({ products, is
           ))}
         </div>
       )}
-    </Container>
+      </Container>
+    </>
   );
 };
-

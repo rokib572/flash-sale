@@ -44,3 +44,31 @@ export const countOrders = async (dbUrl: string): Promise<number> => {
     await queryClient.end();
   }
 };
+
+export const countOrdersForProductSince = async (
+  dbUrl: string,
+  productId: string,
+  sinceIso: string,
+): Promise<{ total: number; perUser: Record<string, number> }> => {
+  const { queryClient } = getDbClient(dbUrl, { ssl: false, logQueries: false });
+  try {
+    const rows = (await queryClient.unsafe(
+      `select user_id as userId, count(*)::int as c
+       from core_data.orders
+       where product_id = $1 and created_at >= $2
+       group by user_id`,
+      [productId, sinceIso],
+    )) as { userid: string; c: number }[];
+
+    const perUser: Record<string, number> = {};
+    for (const r of rows) {
+      // drizzle lowercases column alias; handle both cases
+      const uid = (r as any).userId || (r as any).userid;
+      perUser[uid] = r.c as any as number;
+    }
+    const total = Object.values(perUser).reduce((a, b) => a + b, 0);
+    return { total, perUser };
+  } finally {
+    await queryClient.end();
+  }
+};
