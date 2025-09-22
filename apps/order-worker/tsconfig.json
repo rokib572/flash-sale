@@ -1,0 +1,11 @@
+{
+  "extends": "@flash-sale/tsconfig/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "declaration": true,
+    "composite": true
+  },
+  "include": ["src"]
+}
+

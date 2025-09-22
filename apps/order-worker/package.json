@@ -1,0 +1,25 @@
+{
+  "name": "@flash-sale/order-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@flash-sale/shared": "workspace:*",
+    "@flash-sale/queue": "workspace:*",
+    "@flash-sale/domain-core": "workspace:*"
+  },
+  "devDependencies": {
+    "@flash-sale/tsconfig": "workspace:*",
+    "@types/node": "^20.16.5",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.2"
+  }
+}
+

@@ -33,7 +33,7 @@ const run = async () => {
   const full = process.argv.includes('--full');
   if (full) {
     console.log('Starting docker services...');
-    await dockerUp(['postgres', 'redis', 'api'], cfg.envFile);
+    await dockerUp(['postgres', 'redis', 'api', 'order-worker'], cfg.envFile);
     console.log('Waiting for API health...');
     await waitForHttpOk(`${URL.replace(/\/$/, '')}/health`);
     const dbUrl =

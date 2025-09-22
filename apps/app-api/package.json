@@ -20,7 +20,8 @@
     "ioredis": "^5.4.1",
     "@flash-sale/shared": "workspace:*",
     "@flash-sale/domain-core": "workspace:*",
-    "@flash-sale/redis": "workspace:*"
+    "@flash-sale/redis": "workspace:*",
+    "@flash-sale/queue": "workspace:*"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",

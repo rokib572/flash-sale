@@ -11,6 +11,7 @@ export const createOrderCreateHandler = (db: DbClient): RequestHandler =>
     const { productId } = req.params as { productId: string };
     const { auth } = req as AuthenticatedRequest;
     const userId = auth.userId!;
+    const traceId = (res.locals as any).traceId;
 
     if (!productId) {
       throw DomainError.makeError({
@@ -29,23 +30,43 @@ export const createOrderCreateHandler = (db: DbClient): RequestHandler =>
       });
     }
 
+    const orderData = { userId, productId, flashSaleId: sale.id, quantity: 1 } as const;
+    const isOrdersQueueEnabled = process.env.ORDERS_USE_QUEUE === 'true';
+
+    if (isOrdersQueueEnabled) {
+      const jobId = `${userId}__${sale.id}`; // Avoid ':' in BullMQ custom IDs
+      const orderJobPayload = {
+        jobId,
+        ...orderData,
+        traceId,
+        enqueuedAt: new Date().toISOString(),
+      };
+      try {
+        const ordersCreateQueue = (req.app.locals as any).ordersCreateQueue;
+        if (!ordersCreateQueue?.enqueue) throw new Error('Orders queue not initialized');
+        await ordersCreateQueue.enqueue('create', orderJobPayload, { jobId });
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(202).json({ queued: true, jobId, traceId });
+      } catch (error) {
+        const message = (error as any)?.message || 'Failed to enqueue order';
+        return res.status(500).json({ traceId, error: 'internal_error', message });
+      }
+    }
+
     try {
-      const order = await createOrder(db, {
-        orderData: { userId, productId, flashSaleId: sale.id, quantity: 1 },
-      });
+      const order = await createOrder(db, { orderData });
       res.setHeader('Cache-Control', 'no-store');
       return res.status(201).json({ order });
-    } catch (e) {
-      const err: any = e;
+    } catch (error) {
+      const err: any = error;
       const code = err?.code || 'BAD_REQUEST';
-      const map: Record<string, number> = {
+      const statusMap: Record<string, number> = {
         BAD_REQUEST: 400,
         NOT_FOUND: 404,
         UNAUTHORISED: 401,
         INTERNAL_ERROR: 500,
       };
-      const status = map[code] ?? 400;
-      const traceId = (res.locals as any).traceId;
+      const status = statusMap[code] ?? 400;
       return res.status(status).json({
         traceId,
         error: String(code).toLowerCase(),

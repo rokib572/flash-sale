@@ -12,6 +12,7 @@ import { createOrderRouter } from './routes/order';
 import { createProductsRouter } from './routes/products';
 import { createUserRouter } from './routes/user';
 import crypto from 'node:crypto';
+import { createQueue } from '@flash-sale/queue';
 
 const app = express();
 
@@ -120,6 +121,24 @@ const bootstrap = async () => {
   });
 
   // Mount routers that need DB access
+  // Optionally initialize BullMQ queue for orders
+  const isOrdersQueueEnabled = process.env.ORDERS_USE_QUEUE === 'true';
+  if (isOrdersQueueEnabled) {
+    const { queue: ordersCreateBullQueue, enqueue: enqueueOrderJob } = createQueue('orders-create', {
+      connectionUrl: process.env.REDIS_URL,
+      defaultJobOptions: {
+        attempts: Number(process.env.ORDERS_QUEUE_ATTEMPTS) || 5,
+        backoff: { type: 'exponential', delay: Number(process.env.ORDERS_QUEUE_BACKOFF_DELAY) || 200 },
+        removeOnComplete: true,
+        removeOnFail: 5000,
+      },
+    });
+    (app.locals as any).ordersCreateQueue = {
+      queue: ordersCreateBullQueue,
+      enqueue: enqueueOrderJob,
+    };
+  }
+
   app.use('/flash-sales', createFlashSaleRouter(db));
   app.use('/orders', createOrderRouter(db));
   app.use('/products', createProductsRouter(db));

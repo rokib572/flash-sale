@@ -18,6 +18,7 @@ services:
       DATABASE_SSL: 'false'
       # Toggle on only when you want to seed on deploy
       SEED_ON_START: ${SEED_ON_START:-false}
+      ORDERS_USE_QUEUE: 'true'
     ports:
       - '4000:4000'
     restart: always
@@ -64,10 +65,37 @@ services:
       timeout: 3s
       retries: 10
 
+  order-worker:
+    image: node:20-alpine
+    working_dir: /workspace
+    environment:
+      PNPM_HOME: /usr/local/share/pnpm
+      PATH: /usr/local/share/pnpm:$PATH
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-flash-sale}
+      DATABASE_CONNECTION_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      DATABASE_SSL: 'false'
+      ORDERS_WORKER_CONCURRENCY: ${ORDERS_WORKER_CONCURRENCY:-50}
+    command: >-
+      sh -lc "set -e;
+      corepack enable && corepack prepare pnpm@9.0.0 --activate;
+      pnpm install --filter @flash-sale/order-worker... --no-frozen-lockfile;
+      pnpm -F @flash-sale/order-worker start"
+    volumes:
+      - ./:/workspace
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   pgdata:
 
 networks:
   default:
     name: flash-sale
-
