@@ -12,7 +12,7 @@ RUN mkdir -p apps/app-ui
 COPY apps/app-ui/package.json ./apps/app-ui/package.json
 
 # Install only what the web app needs (cached unless manifests change)
-RUN pnpm install --filter @flash-sale/web... --frozen-lockfile
+RUN pnpm install --filter @flash-sale/web... --no-frozen-lockfile
 
 # Now copy the rest of the UI sources
 COPY apps/app-ui ./apps/app-ui

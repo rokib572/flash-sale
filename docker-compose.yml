@@ -1,5 +1,26 @@
 version: '3.9'
 services:
+  seed:
+    image: node:20-alpine
+    # Run once to apply migrations and seed data, then exit
+    restart: "no"
+    working_dir: /workspace
+    environment:
+      PNPM_HOME: /usr/local/share/pnpm
+      PATH: /usr/local/share/pnpm:$PATH
+      DATABASE_CONNECTION_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-flash-sale}
+      DATABASE_SSL: 'false'
+      RESET_ON_START: ${RESET_ON_START:-0}
+    volumes:
+      - ./:/workspace
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >-
+      sh -lc "set -e;
+      corepack enable && corepack prepare pnpm@9.0.0 --activate;
+      pnpm install --filter @flash-sale/database-core... --no-frozen-lockfile;
+      pnpm tsx database/core/seed/seed-data.ts"
   api:
     build:
       context: .
@@ -32,6 +53,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      seed:
+        condition: service_completed_successfully
 
   web:
     build:

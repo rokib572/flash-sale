@@ -1,5 +1,5 @@
 import type { DbClient } from '@flash-sale/domain-core';
-import { createOrderSafe, getFlashSaleByProductId } from '@flash-sale/domain-core';
+import { createOrder, getFlashSaleByProductId } from '@flash-sale/domain-core';
 import { DomainError } from '@flash-sale/shared';
 import type { RequestHandler } from 'express';
 import type { AuthenticatedRequest } from '../../types';
@@ -29,21 +29,27 @@ export const createOrderCreateHandler = (db: DbClient): RequestHandler =>
       });
     }
 
-    const result = await createOrderSafe(db, {
-      orderData: { userId, flashSaleId: sale.id, quantity: 1 },
-    });
-
-    res.setHeader('Cache-Control', 'no-store');
-    if (result.ok) {
-      return res.status(201).json({ order: result.order });
+    try {
+      const order = await createOrder(db, {
+        orderData: { userId, productId, flashSaleId: sale.id, quantity: 1 },
+      });
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(201).json({ order });
+    } catch (e) {
+      const err: any = e;
+      const code = err?.code || 'BAD_REQUEST';
+      const map: Record<string, number> = {
+        BAD_REQUEST: 400,
+        NOT_FOUND: 404,
+        UNAUTHORISED: 401,
+        INTERNAL_ERROR: 500,
+      };
+      const status = map[code] ?? 400;
+      const traceId = (res.locals as any).traceId;
+      return res.status(status).json({
+        traceId,
+        error: String(code).toLowerCase(),
+        message: err?.clientSafeMessage || err?.message,
+      });
     }
-    const map: Record<string, number> = {
-      ALREADY_ORDERED: 400,
-      BAD_REQUEST: 400,
-      NOT_FOUND: 404,
-      INTERNAL_ERROR: 500,
-    };
-    const status = map[result.code] ?? 400;
-    const traceId = (res.locals as any).traceId;
-    return res.status(status).json({ traceId, error: result.code.toLowerCase(), message: result.message });
   });

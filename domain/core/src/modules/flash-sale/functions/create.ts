@@ -17,6 +17,6 @@ export const createFlashSale = async (
     await validateFlashSale(tx, { flashSaleData: validatedData });
 
     const [created] = await tx.insert(flashSales).values(validatedData).returning();
-    return created!;
+    return created;
   });
 };

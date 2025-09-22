@@ -2,13 +2,13 @@ import { eq } from 'drizzle-orm';
 
 import { DomainError } from '@flash-sale/shared';
 import type { DbClient } from '../../../db/client';
+import { parseDatabaseError } from '../../../db/error';
 import { products, validateProductPayload, type ProductDbo, type ProductPayload } from '../schema';
 import { validateProduct } from './update.validate-product';
-import { parseDatabaseError } from '../../../db/error';
 
 export const updateProduct = async (
   db: DbClient,
-  payload: { accountId: string; productId: string; productData: Partial<ProductPayload> },
+  payload: { productId: string; productData: Partial<ProductPayload> },
 ): Promise<ProductDbo> => {
   const { productId, productData } = payload;
 

@@ -4,6 +4,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 
 import { coreSchema, foreignKey, primaryKey } from '../../db/base';
 import { flashSales } from '../flash-sale/schema';
+import { products } from '../product';
 import { users } from '../user/schema';
 
 export const orders = coreSchema.table(
@@ -14,6 +15,9 @@ export const orders = coreSchema.table(
       .references(() => users.id)
       .notNull(),
     flashSaleId: foreignKey('flash_sale_id').references(() => flashSales.id),
+    productId: foreignKey('product_id')
+      .references(() => products.id)
+      .notNull(),
     quantity: integer('quantity').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .default(sql`now()`)

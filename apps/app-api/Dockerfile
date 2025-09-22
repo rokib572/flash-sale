@@ -25,7 +25,7 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store-v3 \
       --filter @flash-sale/domain-core... \
       --filter @flash-sale/shared... \
       --filter @flash-sale/redis... \
-      --frozen-lockfile --prod --no-optional
+      --no-frozen-lockfile --prod --no-optional
 
 # Bundle the API to a single JS file using pnpm dlx (no devDep needed)
 RUN pnpm dlx esbuild apps/app-api/src/index.ts \

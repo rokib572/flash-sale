@@ -1,0 +1,26 @@
+{
+  "name": "@flash-sale/stress-test",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "run": "tsx src/index.ts",
+    "run:same-user": "STRESS_MODE=same-user tsx src/index.ts",
+    "run:distinct": "STRESS_MODE=distinct tsx src/index.ts",
+    "run:full": "tsx src/index.ts --full"
+  },
+  "dependencies": {
+    "autocannon": "^7.14.0",
+    "dotenv": "^16.4.5",
+    "@flash-sale/domain-core": "workspace:*",
+    "@flash-sale/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.2",
+    "@types/node": "^20.16.5",
+    "@types/autocannon": "^7.12.6",
+    "@flash-sale/tsconfig": "workspace:*"
+  }
+}
