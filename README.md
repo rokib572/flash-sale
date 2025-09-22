@@ -58,16 +58,16 @@ Install deps:
 
 - `pnpm install`
 
-- Run in docker (recommended)
+Run in docker (recommended)
 - `pnpm start:docker`
 
-- Integration Test
+Integration Test
 - `pnpm integration:test`
 
-- Unit Test
+Unit Test
 - `pnpm test`
 
-- Stress Test
+Stress Test
 - `pnpm -F @flash-sale/stress-test run:full`
 - `pnpm -F @flash-sale/stress-test run:same-user`
 
