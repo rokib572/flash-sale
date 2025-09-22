@@ -1,6 +1,5 @@
 import React from 'react';
 import { Router } from '.';
-import { App } from '../ui/App';
 import { LoginPage } from '../ui/pages/login/LoginPage';
 import { CreateFlashSalePage } from '../ui/pages/flash-sales/create/CreateFlashSalePage';
 import { ProductsListPage } from '../ui/pages/products/list/ProductsListPage';

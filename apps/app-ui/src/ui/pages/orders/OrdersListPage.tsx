@@ -4,6 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { RootState } from '../../store';
 import { api } from '../../api/client';
 import { OrdersListView } from './OrdersListView';
+import { useRedirectOn401 } from '../../../modules/shared/hooks/use-redirect-on-401';
+import { qk } from '../../api/query-keys';
 
 export type OrderRow = {
   id: string;
@@ -22,7 +24,7 @@ export const OrdersListPage: React.FC = () => {
   const [offset, setOffset] = React.useState(0);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery<ListResponse, Error, ListResponse>({
-    queryKey: ['orders:list', limit, offset],
+    queryKey: qk.orders.list(limit, offset),
     queryFn: () =>
       api.get<ListResponse>(`/orders/list?limit=${limit}&offset=${offset}`, {
         headers: token ? { 'x-auth-token': token } : undefined,
@@ -30,6 +32,8 @@ export const OrdersListPage: React.FC = () => {
     refetchOnWindowFocus: false,
     placeholderData: (prev) => prev,
   });
+
+  useRedirectOn401(error as any);
 
   const nextPage = () => setOffset((o) => o + limit);
   const prevPage = () => setOffset((o) => Math.max(0, o - limit));

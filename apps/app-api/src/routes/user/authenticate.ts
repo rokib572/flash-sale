@@ -17,7 +17,10 @@ export const createUserAuthenticateHandler = (db: DbClient): RequestHandler =>
     const { email, password } = parse.data;
 
     const user = await authenticateUser(db, { email, password });
-    const token = makeUnsignedJwt({ sub: user.id, email: user.email, iat: Math.floor(Date.now() / 1000) });
+    const iat = Math.floor(Date.now() / 1000);
+    const ttl = Number(process.env.AUTH_TOKEN_TTL_SECONDS || '3600');
+    const exp = iat + ttl;
+    const token = makeUnsignedJwt({ sub: user.id, email: user.email, iat, exp });
 
     return res.json({
       token,

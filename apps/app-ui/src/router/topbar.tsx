@@ -1,13 +1,16 @@
 import React from 'react';
 import { Router } from '.';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../ui/store';
 import { useThemeState } from '../modules/app-theme';
 import { Container } from '../ui/layout/Container';
+import { logout } from '../ui/store';
+import { toast } from 'react-toastify';
 
 export const Topbar: React.FC = () => {
   const { theme, toggle } = useThemeState();
   const user = useSelector((s: RootState) => s.auth.user);
+  const dispatch = useDispatch();
   const route = Router.useRoute(['Home', 'FlashSalesList', 'ProductsList', 'OrdersList', 'Login', 'FlashSalesCreate', 'ProductsCreate']);
   const current = (route?.name ?? 'Home') as 'Home' | 'FlashSalesList' | 'ProductsList' | 'OrdersList' | 'Login' | 'FlashSalesCreate' | 'ProductsCreate';
 
@@ -44,7 +47,19 @@ export const Topbar: React.FC = () => {
               {theme === 'dark' ? 'Light' : 'Dark'}
             </button>
             {user ? (
-              <span className="text-sm text-neutral-700 dark:text-neutral-200">{user.givenName}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-neutral-700 dark:text-neutral-200">{user.givenName}</span>
+                <button
+                  className="text-sm px-2 py-1 rounded-md text-neutral-600 transition-colors hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white"
+                  onClick={() => {
+                    dispatch(logout());
+                    toast.info('Signed out');
+                    Router.replace('Login');
+                  }}
+                >
+                  Logout
+                </button>
+              </div>
             ) : (
               <button
                 className="text-sm px-2 py-1 rounded-md text-neutral-600 transition-colors hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white"

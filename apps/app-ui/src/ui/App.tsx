@@ -11,9 +11,9 @@ export const App: React.FC = () => {
   const name = (route?.name ?? 'Home') as 'Home' | 'Login' | 'FlashSalesCreate' | 'FlashSalesList' | 'ProductsList' | 'ProductsCreate';
 
   React.useEffect(() => {
-    // Redirect to home when required auth is missing (except on Login)
+    // Redirect to login when auth is missing (except on Login itself)
     if (!token && name !== 'Login') {
-      Router.replace('Home');
+      Router.replace('Login');
     }
   }, [token, name]);
 

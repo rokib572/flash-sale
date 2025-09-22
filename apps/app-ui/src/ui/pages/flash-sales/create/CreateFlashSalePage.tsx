@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import { Router } from '../../../../router';
@@ -7,6 +7,8 @@ import { api } from '../../../api/client';
 import type { RootState } from '../../../store';
 import { CreateFlashSaleView, type Product } from './CreateFlashSaleView';
 import { Button } from '../../../components/ui/button';
+import { useRedirectOn401 } from '../../../../modules/shared/hooks/use-redirect-on-401';
+import { qk } from '../../../api/query-keys';
 
 type ProductsResponse = { products: Product[] } | Product[];
 type CreateRequest = {
@@ -18,6 +20,7 @@ type CreateRequest = {
 };
 
 export const CreateFlashSalePage: React.FC = () => {
+  const queryClient = useQueryClient();
   const token = useSelector((s: RootState) => s.auth.token);
   const navigate = (name: 'Home' | 'ProductsCreate') => Router.replace(name);
 
@@ -26,7 +29,7 @@ export const CreateFlashSalePage: React.FC = () => {
     isLoading: loadingProducts,
     error: productsError,
   } = useQuery<ProductsResponse>({
-    queryKey: ['products:list'],
+    queryKey: qk.products.list(),
     queryFn: () =>
       api.get<ProductsResponse>('/products/list', {
         headers: token ? { 'x-auth-token': token } : undefined,
@@ -57,7 +60,9 @@ export const CreateFlashSalePage: React.FC = () => {
   const mutation = useMutation({
     mutationFn: async (payload: CreateRequest) =>
       api.post('/flash-sales', payload, { headers: token ? { 'x-auth-token': token } : undefined }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Ensure flash sales list refreshes after creation
+      await queryClient.invalidateQueries({ queryKey: qk.flashSales.list() });
       toast.success('Flash sale created');
       navigate('Home');
     },
@@ -66,6 +71,8 @@ export const CreateFlashSalePage: React.FC = () => {
       toast.error(msg);
     },
   });
+
+  useRedirectOn401(productsError, mutation.error as any);
 
   return (
     <>

@@ -7,6 +7,7 @@ import './index.css';
 import { ThemeStateProvider } from './modules/app-theme';
 import { AppErrorBoundary } from './ui/components/error-boundary';
 import { Toasts } from './ui/components/toast-container';
+import { SessionManager } from './ui/auth/SessionManager';
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -14,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
       <ThemeStateProvider>
         <AppErrorBoundary>
           <App />
+          <SessionManager />
           <Toasts />
         </AppErrorBoundary>
       </ThemeStateProvider>

@@ -6,6 +6,7 @@ import { toast } from 'react-toastify';
 import type { RootState } from '../../../store';
 import { FlashSalesListView, type FlashSale } from './FlashSalesListView';
 import { Router } from '../../../../router';
+import { qk } from '../../../api/query-keys';
 
 type ListResponse = { flashSales: FlashSale[] };
 
@@ -14,14 +15,13 @@ export const FlashSalesListPage: React.FC = () => {
   const navigate = (name: 'Login') => Router.replace(name);
   const [orderingProductId, setOrderingProductId] = React.useState<string | null>(null);
   const { data, isLoading, error } = useQuery<ListResponse>({
-    queryKey: ['flash-sales-list'],
+    queryKey: qk.flashSales.list(),
     queryFn: () => api.get<ListResponse>('/flash-sales/list', {}),
     // Fetch once only
     staleTime: Infinity,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchOnMount: false,
   });
 
   const orderMutation = useMutation({

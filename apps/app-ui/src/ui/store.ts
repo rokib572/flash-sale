@@ -1,4 +1,5 @@
 import { configureStore, createSlice } from '@reduxjs/toolkit';
+import { isTokenExpired } from './auth/jwt';
 
 type UiState = {
   message: string | null;
@@ -79,7 +80,16 @@ const saveAuth = (state: RootState) => {
 export const initAuthPersistence = () => {
   // hydrate once
   const initial = typeof window !== 'undefined' ? loadAuth() : null;
-  if (initial) store.dispatch(hydrateAuth(initial));
+  if (initial) {
+    if (isTokenExpired(initial.token)) {
+      // purge expired sessions on load
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+    } else {
+      store.dispatch(hydrateAuth(initial));
+    }
+  }
   // subscribe to changes
   let prev: string | null = null;
   store.subscribe(() => {
