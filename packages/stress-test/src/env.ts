@@ -12,14 +12,18 @@ export type StressEnv = {
   mode: 'same-user' | 'distinct';
   userId?: string;
   usersFile?: string;
-  envFile?: string;
+  envFile?: string; // resolved path if found
   dbUrl?: string;
 };
 
 export const loadEnv = (): StressEnv => {
-  const envFile = process.env.ENV_FILE || '.env.local';
-  const p = path.resolve(process.cwd(), envFile);
-  if (fs.existsSync(p)) dotenv.config({ path: p });
+  const envFileName = process.env.ENV_FILE || '.env.local';
+  const candidates = [
+    path.resolve(process.cwd(), envFileName),
+    path.resolve(process.cwd(), '..', '..', envFileName),
+  ];
+  const resolvedEnvFile = candidates.find((f) => fs.existsSync(f));
+  if (resolvedEnvFile) dotenv.config({ path: resolvedEnvFile });
 
   const url = process.env.URL || 'http://localhost:4000';
   const productId = process.env.PRODUCT_ID || '';
@@ -32,5 +36,17 @@ export const loadEnv = (): StressEnv => {
   const usersFile = process.env.USERS_FILE;
   const dbUrl = process.env.DATABASE_CONNECTION_URL;
 
-  return { url, productId, users, connections, duration, amount, mode, userId, usersFile, envFile, dbUrl };
+  return {
+    url,
+    productId,
+    users,
+    connections,
+    duration,
+    amount,
+    mode,
+    userId,
+    usersFile,
+    envFile: resolvedEnvFile,
+    dbUrl,
+  };
 };

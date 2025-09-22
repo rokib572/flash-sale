@@ -36,6 +36,20 @@ services:
       SEED_ON_START: ${SEED_ON_START:-false}
       CHOKIDAR_USEPOLLING: 'true'
       ORDERS_USE_QUEUE: 'true'
+      # Disable all rate limiting in local/stress by default
+      RL_DISABLED: ${RL_DISABLED:-true}
+      # Stress-mode helpers to avoid 429s on write endpoints
+      ORDERS_SOFTEN_429: ${ORDERS_SOFTEN_429:-true}
+      RL_BYPASS_PATHS: ${RL_BYPASS_PATHS:-/orders/}
+      # Looser per-user rate limits for stress testing
+      RL_USER_CAPACITY: ${RL_USER_CAPACITY:-200}
+      RL_USER_REFILL: ${RL_USER_REFILL:-100}
+      RL_USER_DISABLED: 'true'
+      # Read-only global/IP limits to protect GETs
+      RL_GLOBAL_CAPACITY: ${RL_GLOBAL_CAPACITY:-2000}
+      RL_GLOBAL_REFILL: ${RL_GLOBAL_REFILL:-200}
+      RL_IP_CAPACITY: ${RL_IP_CAPACITY:-300}
+      RL_IP_REFILL: ${RL_IP_REFILL:-30}
     ports:
       - '4000:4000'
     # Hot reload: mount source code into the container and run dev watcher

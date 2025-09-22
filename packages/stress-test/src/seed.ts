@@ -11,15 +11,15 @@ export const seedData = async (dbUrl: string, opts: { users: number; productId?:
     const product = await createProduct(db, {
       productData: { name: `stress-prod-${Date.now()}`, quantity: 1_000_000 },
     });
-    // Flash sale (active for 1 hour)
+    // Flash sale window: start 10 minutes ago, end 2 hours from now
     const now = new Date();
     await createFlashSale(db, {
       flashSaleData: {
         name: `stress-sale-${Date.now()}`,
         description: 'stress test window',
         productId: product.id,
-        startDate: new Date(now.getTime() - 60_000),
-        endDate: new Date(now.getTime() + 60 * 60_000),
+        startDate: new Date(now.getTime() - 10 * 60 * 1000),
+        endDate: new Date(now.getTime() + 2 * 60 * 60 * 1000),
       },
     });
 
@@ -42,4 +42,3 @@ export const seedData = async (dbUrl: string, opts: { users: number; productId?:
     await queryClient.end();
   }
 };
-

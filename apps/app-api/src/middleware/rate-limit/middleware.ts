@@ -11,6 +11,25 @@ export const createRateLimitMiddleware = (options: RateLimitOptions) => {
     options.ttlSeconds ?? calculateSuggestedTtlSeconds(options.capacity, options.refillPerSec);
 
   return async (req: Request, res: Response, next: NextFunction) => {
+    // Global off switch
+    if (process.env.RL_DISABLED === 'true') return next();
+    // Allow simple path-based bypasses for stress testing or specific routes
+    // RL_BYPASS_PATHS supports comma-separated path prefixes. Example: "/orders/,/health"
+    const bypassPaths = (process.env.RL_BYPASS_PATHS || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (bypassPaths.length && typeof req.path === 'string') {
+      const p = req.path || '';
+      if (bypassPaths.some((prefixPath) => p.startsWith(prefixPath))) return next();
+    }
+
+    // If orders are enqueued via a background worker, do not rate-limit the order ingestion path
+    // This prevents 429 storms during flash sales; admission control is handled by the queue.
+    if (process.env.ORDERS_USE_QUEUE === 'true' && typeof req.path === 'string') {
+      if (req.path.startsWith('/orders/')) return next();
+    }
+
     const redis: Redis | undefined = req.app?.locals?.redis;
     if (!redis) return next();
 
@@ -50,11 +69,16 @@ export const createRateLimitMiddleware = (options: RateLimitOptions) => {
 };
 
 export const createUserRateLimitMiddleware = () =>
-  createRateLimitMiddleware({
-    scope: 'user',
-    capacity: Number(process.env.RL_USER_CAPACITY ?? 5),
-    refillPerSec: Number(process.env.RL_USER_REFILL ?? 1),
-  });
+  (req: Request, res: Response, next: NextFunction) => {
+    // Default: disable user rate limits outside production to ease local/stress testing
+    const disabledDefault = process.env.NODE_ENV !== 'production' ? 'true' : 'false';
+    if ((process.env.RL_USER_DISABLED ?? disabledDefault) === 'true') return next();
+    return createRateLimitMiddleware({
+      scope: 'user',
+      capacity: Number(process.env.RL_USER_CAPACITY ?? 5),
+      refillPerSec: Number(process.env.RL_USER_REFILL ?? 1),
+    })(req, res, next);
+  };
 
 export const createIpRateLimitMiddleware = () =>
   createRateLimitMiddleware({

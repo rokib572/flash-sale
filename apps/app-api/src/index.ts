@@ -13,6 +13,10 @@ import { createProductsRouter } from './routes/products';
 import { createUserRouter } from './routes/user';
 import crypto from 'node:crypto';
 import { createQueue } from '@flash-sale/queue';
+import {
+  createGlobalRateLimitMiddleware,
+  createIpRateLimitMiddleware,
+} from './middleware/rate-limit';
 
 const app = express();
 
@@ -137,6 +141,39 @@ const bootstrap = async () => {
       queue: ordersCreateBullQueue,
       enqueue: enqueueOrderJob,
     };
+  }
+
+  // Optional: soften 429 to 202 for POST /orders during flash sales
+  // Enable by setting ORDERS_SOFTEN_429=true
+  app.use((req, res, next) => {
+    const soften = process.env.ORDERS_SOFTEN_429 === 'true';
+    if (!soften) return next();
+    const isOrdersPost = req.method === 'POST' && typeof req.path === 'string' && req.path.startsWith('/orders/');
+    if (!isOrdersPost) return next();
+    const originalStatus = res.status.bind(res);
+    // Intercept status(429) to downgrade to 202 Accepted
+    res.status = (code: number) => {
+      if (code === 429) {
+        res.setHeader('X-RateLimit-Softened', 'true');
+        return originalStatus(202);
+      }
+      return originalStatus(code);
+    };
+    next();
+  });
+
+  // Attach read-only (GET/HEAD) global and IP rate limiters
+  // These protect read-heavy endpoints without throttling writes/orders
+  const readOnly = (mw: express.RequestHandler): express.RequestHandler => (req, res, next) => {
+    if (req.method === 'GET' || req.method === 'HEAD') return (mw as any)(req, res, next);
+    return next();
+  };
+  // Avoid limiting health checks
+  const bypassHealth: express.RequestHandler = (req, _res, next) =>
+    req.path === '/health' ? next('route') : next();
+  if (process.env.RL_DISABLED !== 'true') {
+    app.use(bypassHealth, readOnly(createGlobalRateLimitMiddleware()));
+    app.use(bypassHealth, readOnly(createIpRateLimitMiddleware()));
   }
 
   app.use('/flash-sales', createFlashSaleRouter(db));

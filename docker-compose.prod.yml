@@ -19,6 +19,20 @@ services:
       # Toggle on only when you want to seed on deploy
       SEED_ON_START: ${SEED_ON_START:-false}
       ORDERS_USE_QUEUE: 'true'
+      # Global switch to disable all rate limiting (default false in prod)
+      RL_DISABLED: ${RL_DISABLED:-false}
+      # Read-only rate limits (GET/HEAD). Adjust to your traffic profile.
+      RL_GLOBAL_CAPACITY: ${RL_GLOBAL_CAPACITY:-1000}
+      RL_GLOBAL_REFILL: ${RL_GLOBAL_REFILL:-150}
+      RL_IP_CAPACITY: ${RL_IP_CAPACITY:-120}
+      RL_IP_REFILL: ${RL_IP_REFILL:-20}
+      # Keep user limiter off unless explicitly enabled
+      RL_USER_DISABLED: ${RL_USER_DISABLED:-true}
+      # Do NOT soften 429s in production (leave unset or false)
+      # ORDERS_SOFTEN_429: 'false'
+      # Tune per-user rate limits in production via env
+      # RL_USER_CAPACITY: ${RL_USER_CAPACITY:-5}
+      # RL_USER_REFILL: ${RL_USER_REFILL:-1}
     ports:
       - '4000:4000'
     restart: always

@@ -70,3 +70,22 @@ Expected outcome: successes ≈ min(USERS, SALE_TOTAL_STOCK), failures include `
 - Rate-limit `purchase` endpoint; add idempotency keys for client retries
 - Add observability: metrics, tracing, and structured logs
 - Expand tests with containerized Redis in CI (via services)
+
+## Rate Limiting & Stress Mode
+
+- Read-only (GET/HEAD) rate limits are applied globally and per-IP to protect read-heavy endpoints without throttling writes.
+- Write endpoints (e.g., order submission) are not rate-limited when queue ingestion is enabled.
+- For stress testing you can “soften” 429 responses on order POSTs to 202 to avoid client-side failures.
+
+Environment toggles (API):
+- `ORDERS_USE_QUEUE=true`: Enqueue orders; worker performs DB writes.
+- `ORDERS_SOFTEN_429=true` (stress only): Downgrades 429 → 202 for order POSTs.
+- `RL_BYPASS_PATHS=/orders/` (stress only): Explicitly bypasses limiter on orders routes.
+- `RL_GLOBAL_CAPACITY, RL_GLOBAL_REFILL`: Global read-only token bucket (capacity, refill per second).
+- `RL_IP_CAPACITY, RL_IP_REFILL`: IP-scoped read-only token bucket.
+- `RL_USER_DISABLED=true` (stress/dev): Disables per-user rate limits by default outside production.
+- `RL_DISABLED=true`: Global off switch for all rate-limiters.
+
+Compose presets:
+- `docker-compose.yml` (local/stress): Enables queue, softens 429 by default, bypasses `/orders/`, disables user RL, and sets generous global/IP read limits.
+- `docker-compose.prod.yml` (prod): Enables queue, sets conservative global/IP read limits, keeps user RL disabled unless you opt-in, and does not soften 429.

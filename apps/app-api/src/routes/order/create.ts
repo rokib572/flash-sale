@@ -1,5 +1,6 @@
 import type { DbClient } from '@flash-sale/domain-core';
 import { createOrder, getFlashSaleByProductId } from '@flash-sale/domain-core';
+import { getUserById } from '@flash-sale/domain-core/src/modules/user/functions/get';
 import { DomainError } from '@flash-sale/shared';
 import type { RequestHandler } from 'express';
 import type { AuthenticatedRequest } from '../../types';
@@ -30,6 +31,12 @@ export const createOrderCreateHandler = (db: DbClient): RequestHandler =>
       });
     }
 
+    // Validate user exists before enqueue to avoid enqueuing doomed jobs
+    const user = await getUserById(db, { userId });
+    if (!user) {
+      return res.status(401).json({ traceId, error: 'invalid_user' });
+    }
+
     const orderData = { userId, productId, flashSaleId: sale.id, quantity: 1 } as const;
     const isOrdersQueueEnabled = process.env.ORDERS_USE_QUEUE === 'true';
 
@@ -44,6 +51,24 @@ export const createOrderCreateHandler = (db: DbClient): RequestHandler =>
       try {
         const ordersCreateQueue = (req.app.locals as any).ordersCreateQueue;
         if (!ordersCreateQueue?.enqueue) throw new Error('Orders queue not initialized');
+
+        // Queue backpressure: reject when the queue is too deep
+        const maxQueuedDepth = Number(process.env.ORDERS_QUEUE_MAX_QUEUED || '100000');
+        const retryAfterSeconds = Number(process.env.ORDERS_QUEUE_RETRY_AFTER_SECONDS || '2');
+        const bullQueue: any = ordersCreateQueue.queue;
+        if (bullQueue?.getJobCounts) {
+          const counts = await bullQueue.getJobCounts('waiting', 'delayed');
+          const queuedDepth = Number(counts?.waiting || 0) + Number(counts?.delayed || 0);
+          if (queuedDepth >= maxQueuedDepth) {
+            res.setHeader('Retry-After', String(retryAfterSeconds));
+            return res.status(503).json({
+              traceId,
+              error: 'queue_busy',
+              message: 'Order queue is busy, please retry later.',
+            });
+          }
+        }
+
         await ordersCreateQueue.enqueue('create', orderJobPayload, { jobId });
         res.setHeader('Cache-Control', 'no-store');
         return res.status(202).json({ queued: true, jobId, traceId });

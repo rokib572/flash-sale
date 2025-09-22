@@ -15,7 +15,7 @@ export const createOrder = async (
     return await db.transaction(async (tx) => {
       const validatedOrderData = validateOrderPayload(orderData);
       await validateOrder(tx, { orderData: validatedOrderData });
-      const [order] = await db.insert(orders).values(validatedOrderData).returning();
+      const [order] = await tx.insert(orders).values(validatedOrderData).returning();
 
       const productData = await getProductById(tx, { productId });
       if (order && productData)
