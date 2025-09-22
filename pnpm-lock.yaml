@@ -158,6 +158,9 @@ importers:
       vite:
         specifier: ^5.4.8
         version: 5.4.20(@types/node@20.19.17)
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@20.19.17)
 
   apps/order-worker:
     dependencies:
